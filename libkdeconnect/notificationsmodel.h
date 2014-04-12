@@ -23,10 +23,9 @@
 
 #include <QAbstractItemModel>
 #include <QAbstractListModel>
-#include <QPixmap>
 #include <QList>
 
-#include "libkdeconnect/dbusinterfaces.h"
+#include "dbusinterfaces.h"
 
 class KDECONNECT_EXPORT NotificationsModel
     : public QAbstractListModel

@@ -9,6 +9,8 @@ include_directories(
     ${QCA2_INCLUDE_DIR}
 )
 
+include_directories(${CMAKE_BINARY_DIR}/libkdeconnect)
+
 add_subdirectory(backends/lan)
 add_subdirectory(backends/loopback)
 

@@ -23,12 +23,12 @@
 
 #include "kdeconnect_export.h"
 
-#include "libkdeconnect/daemoninterface.h"
-#include "libkdeconnect/deviceinterface.h"
-#include "libkdeconnect/devicebatteryinterface.h"
-#include "libkdeconnect/devicesftpinterface.h"
-#include "libkdeconnect/devicenotificationsinterface.h"
-#include "libkdeconnect/notificationinterface.h"
+#include "daemoninterface.h"
+#include "deviceinterface.h"
+#include "devicebatteryinterface.h"
+#include "devicesftpinterface.h"
+#include "devicenotificationsinterface.h"
+#include "notificationinterface.h"
 
 /**
  * Using these "proxy" classes just in case we need to rename the

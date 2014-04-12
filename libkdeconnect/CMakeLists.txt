@@ -6,7 +6,9 @@ set(likdeconnect_VERSION "${likdeconnect_VERSION_MAJOR}.${likdeconnect_VERSION_M
 include_directories(${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_BINARY_DIR}
-                    ${CMAKE_SOURCE_DIR})
+                    ${CMAKE_BINARY_DIR}/libkdeconnect
+                    ${CMAKE_SOURCE_DIR}
+)
 
 add_definitions(-DKDECONNECT_LIBRARY)
 
