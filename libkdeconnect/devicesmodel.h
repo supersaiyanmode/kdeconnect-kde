@@ -21,7 +21,6 @@
 #ifndef DEVICESMODEL_H
 #define DEVICESMODEL_H
 
-
 #include <QAbstractItemModel>
 #include <QAbstractListModel>
 #include <QPixmap>
@@ -59,21 +58,21 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
 
-    DeviceDbusInterface* getDevice(const QModelIndex& index);
+    DeviceDbusInterface *getDevice(const QModelIndex &index);
 
 public Q_SLOTS:
-    void deviceStatusChanged(const QString& id);
+    void deviceStatusChanged(const QString &id);
 
 private Q_SLOTS:
-    void deviceAdded(const QString& id);
-    void deviceRemoved(const QString& id);
+    void deviceAdded(const QString &id);
+    void deviceRemoved(const QString &id);
     void refreshDeviceList();
 
 Q_SIGNALS:
     void rowsChanged();
 
 private:
-    DaemonDbusInterface* m_dbusInterface;
+    DaemonDbusInterface *m_dbusInterface;
     QList<DeviceDbusInterface*> m_deviceList;
     StatusFlags m_displayFilter;
 

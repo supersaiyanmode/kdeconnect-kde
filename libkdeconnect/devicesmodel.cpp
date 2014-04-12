@@ -55,34 +55,34 @@ DevicesModel::DevicesModel(QObject *parent)
     QHash<int, QByteArray> names = roleNames();
     names.insert(IdModelRole, "deviceId");
     setRoleNames(names);
-
 }
 
 DevicesModel::~DevicesModel()
 {
 }
 
-void DevicesModel::deviceAdded(const QString& id)
+void DevicesModel::deviceAdded(const QString &id)
 {
     //TODO: Actually add instead of refresh
     Q_UNUSED(id);
     refreshDeviceList();
 }
 
-void DevicesModel::deviceRemoved(const QString& id)
+void DevicesModel::deviceRemoved(const QString &id)
 {
     //TODO: Actually remove instead of refresh
     Q_UNUSED(id);
     refreshDeviceList();
 }
 
-void DevicesModel::deviceStatusChanged(const QString& id)
+void DevicesModel::deviceStatusChanged(const QString &id)
 {
     Q_UNUSED(id);
     //FIXME: Emitting dataChanged does not invalidate the view, refreshDeviceList does.
     //Q_EMIT dataChanged(index(0),index(rowCount()));
     refreshDeviceList();
 }
+
 DevicesModel::StatusFlags DevicesModel::displayFilter() const
 {
     return m_displayFilter;
@@ -101,7 +101,6 @@ void DevicesModel::setDisplayFilter(DevicesModel::StatusFlags flags)
 
 void DevicesModel::refreshDeviceList()
 {
-
     if (!m_deviceList.isEmpty()) {
         beginRemoveRows(QModelIndex(), 0, m_deviceList.size() - 1);
         m_deviceList.clear();
@@ -121,7 +120,7 @@ void DevicesModel::refreshDeviceList()
     if (pendingDeviceIds.isError()) return;
 
     const QStringList& deviceIds = pendingDeviceIds.value();
-    Q_FOREACH(const QString& id, deviceIds) {
+    Q_FOREACH(const QString &id, deviceIds) {
         int firstRow = m_deviceList.size();
         int lastRow = firstRow;
         beginInsertRows(QModelIndex(), firstRow, lastRow);
@@ -130,7 +129,6 @@ void DevicesModel::refreshDeviceList()
     }
 
     Q_EMIT dataChanged(index(0), index(m_deviceList.size()));
-
 }
 
 QVariant DevicesModel::data(const QModelIndex &index, int role) const
@@ -173,7 +171,7 @@ QVariant DevicesModel::data(const QModelIndex &index, int role) const
     }
 }
 
-DeviceDbusInterface* DevicesModel::getDevice(const QModelIndex& index)
+DeviceDbusInterface *DevicesModel::getDevice(const QModelIndex &index)
 {
     if (!index.isValid()) {
         return NULL;
@@ -196,4 +194,3 @@ int DevicesModel::rowCount(const QModelIndex &parent) const
 
     return m_deviceList.size();
 }
-

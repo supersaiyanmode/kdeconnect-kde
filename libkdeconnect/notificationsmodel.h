@@ -38,42 +38,42 @@ class KDECONNECT_EXPORT NotificationsModel
 
 public:
     enum ModelRoles {
-        IconModelRole = Qt::DecorationRole,
-        NameModelRole = Qt::DisplayRole,
-        ContentModelRole = Qt::UserRole,
-        AppNameModelRole = Qt::UserRole+1,
-        IdModelRole  = Qt::UserRole+2,
-        DismissableModelRole = Qt::UserRole+3,
-        DbusInterfaceRole = Qt::UserRole+4,
+        IconModelRole        = Qt::DecorationRole,
+        NameModelRole        = Qt::DisplayRole,
+        ContentModelRole     = Qt::UserRole,
+        AppNameModelRole     = Qt::UserRole + 1,
+        IdModelRole          = Qt::UserRole + 2,
+        DismissableModelRole = Qt::UserRole + 3,
+        DbusInterfaceRole    = Qt::UserRole + 4
     };
 
     NotificationsModel(QObject *parent = 0);
     virtual ~NotificationsModel();
 
     QString deviceId();
-    void setDeviceId(const QString& deviceId);
+    void setDeviceId(const QString &deviceId);
 
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
 
-    NotificationDbusInterface* getNotification(const QModelIndex&);
+    NotificationDbusInterface *getNotification(const QModelIndex &index);
 
 public Q_SLOTS:
     void dismissAll();
     bool isAnyDimissable();
 
 private Q_SLOTS:
-    void notificationAdded(const QString& id);
-    void notificationRemoved(const QString& id);
+    void notificationAdded(const QString &id);
+    void notificationRemoved(const QString &id);
     void refreshNotificationList();
 
 Q_SIGNALS:
-    void deviceIdChanged(const QString& value);
+    void deviceIdChanged(const QString &value);
     void anyDismissableChanged();
     void rowsChanged();
 
 private:
-    DeviceNotificationsDbusInterface* m_dbusInterface;
+    DeviceNotificationsDbusInterface *m_dbusInterface;
     QList<NotificationDbusInterface*> m_notificationList;
     QString m_deviceId;
 };
