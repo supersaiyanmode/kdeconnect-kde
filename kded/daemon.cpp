@@ -142,7 +142,7 @@ void Daemon::forceOnNetworkChange()
     }
 }
 
-QStringList Daemon::devices(bool onlyReachable, bool onlyVisible)
+QStringList Daemon::devices(bool onlyReachable, bool onlyVisible) const
 {
     QStringList ret;
     Q_FOREACH(Device* device, mDevices) {
