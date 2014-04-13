@@ -59,6 +59,12 @@ KPluginInfo PluginLoader::getPluginInfo(const QString& name) const
 
 PluginData PluginLoader::instantiatePluginForDevice(const QString& name, Device* device) const
 {
+    QVariant deviceVariant = QVariant::fromValue<Device*>(device);
+    return instantiatePlugin(name, QVariantList() << deviceVariant, device);
+}
+
+PluginData PluginLoader::instantiatePlugin(const QString& name, const QVariantList& args, QObject* parent) const
+{
     PluginData ret;
 
     KService::Ptr service = plugins[name];
@@ -74,11 +80,10 @@ PluginData PluginLoader::instantiatePluginForDevice(const QString& name, Device*
     }
 
     ret.interfaces = service->property("X-KdeConnect-SupportedPackageType", QVariant::StringList).toStringList();
-
-    QVariant deviceVariant = QVariant::fromValue<Device*>(device);
+    ret.haveStandaloneInstance = service->property("X-KdeConnect-HaveStandaloneInstance", QVariant::Bool).toBool();
 
     //FIXME any reason to use QObject in template param instead KdeConnectPlugin?
-    ret.plugin = factory->create<KdeConnectPlugin>(device, QVariantList() << deviceVariant);
+    ret.plugin = factory->create<KdeConnectPlugin>(parent, args);
     if (!ret.plugin) {
         kDebug(kdeconnect_kded()) << "Error loading plugin";
         return ret;
@@ -88,3 +93,12 @@ PluginData PluginLoader::instantiatePluginForDevice(const QString& name, Device*
     return ret;
 }
 
+void PluginLoader::loadStandalonePlugins(QObject* parent) const
+{
+    Q_FOREACH (const QString &name, getPluginList()) {
+        const KPluginInfo &info = getPluginInfo(name);
+        if (info.service()->property("X-KdeConnect-HaveStandaloneInstance", QVariant::Bool).toBool()) {
+            instantiatePlugin(name, QVariantList(), parent);
+        }
+    }
+}

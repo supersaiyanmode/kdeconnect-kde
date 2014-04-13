@@ -25,7 +25,11 @@
 KdeConnectPlugin::KdeConnectPlugin(QObject* parent, const QVariantList& args)
     : QObject(parent)
 {
-    mDevice = qvariant_cast< Device* >(args.first());
+    if (!args.isEmpty()) {
+        mDevice = qvariant_cast< Device* >(args.first());
+    } else {
+        mDevice = 0;
+    }
 }
 
 Device* KdeConnectPlugin::device()

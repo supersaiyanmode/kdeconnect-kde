@@ -34,9 +34,10 @@ class KdeConnectPlugin;
 
 struct PluginData
 {
-    PluginData() : plugin(0) {}
+    PluginData() : plugin(0), haveStandaloneInstance(false) {}
     KdeConnectPlugin* plugin;
     QStringList interfaces;
+    bool haveStandaloneInstance;
 };
 
 class PluginLoader
@@ -48,11 +49,13 @@ public:
     QStringList getPluginList() const;
     KPluginInfo getPluginInfo(const QString& name) const;
     PluginData instantiatePluginForDevice(const QString& name, Device* device) const;
+    PluginData instantiatePlugin(const QString& name, const QVariantList& args, QObject* parent = 0) const;
+
+    void loadStandalonePlugins(QObject* parent = 0) const;
 
 private:
     PluginLoader();
     QMap<QString,KService::Ptr> plugins;
-
 
 };
 
