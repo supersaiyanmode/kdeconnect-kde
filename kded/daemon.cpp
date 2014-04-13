@@ -31,6 +31,7 @@
 #include <KConfigGroup>
 #include <KStandardDirs>
 
+#include "plugins/pluginloader.h"
 #include "kdebugnamespace.h"
 #include "networkpackage.h"
 #include "backends/lan/lanlinkprovider.h"
@@ -106,6 +107,8 @@ Daemon::Daemon(QObject *parent) : QObject(parent)
         mDevices[id] = device;
         Q_EMIT deviceAdded(id);
     }
+
+    PluginLoader::instance()->loadStandalonePlugins(this);
     
     //Listen to connectivity changes
     QNetworkSession* network = new QNetworkSession(QNetworkConfigurationManager().defaultConfiguration());
