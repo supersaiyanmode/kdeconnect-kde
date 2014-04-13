@@ -79,7 +79,7 @@ PluginData PluginLoader::instantiatePlugin(const QString& name, const QVariantLi
         return ret;
     }
 
-    ret.interfaces = service->property("X-KdeConnect-SupportedPackageType", QVariant::StringList).toStringList();
+    ret.interfaces = service->property("X-KdeConnect-SupportedPackageType", QVariant::String).toString().split(QLatin1Char(','));
     ret.haveStandaloneInstance = service->property("X-KdeConnect-HaveStandaloneInstance", QVariant::Bool).toBool();
 
     //FIXME any reason to use QObject in template param instead KdeConnectPlugin?
