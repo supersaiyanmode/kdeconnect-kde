@@ -54,10 +54,16 @@ struct default_arg<QByteArray> {
     static QByteArray get() { return QByteArray(); }
 };
 
-//QStrings -> empty string
+//QString -> empty string
 template<>
 struct default_arg<QString> {
     static QString get() { return QString(); }
+};
+
+//QStringList -> empty string list
+template<>
+struct default_arg<QStringList> {
+    static QStringList get() { return QStringList(); }
 };
 
 template<class T>
