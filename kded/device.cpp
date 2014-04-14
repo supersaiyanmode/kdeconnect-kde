@@ -22,7 +22,7 @@
 #include <QFile>
 
 Device::Device(QObject* parent, const QString& id)
-    : QObject(parent)
+    : IDevice(parent)
     , m_deviceId(id)
     , m_pairStatus(Device::Paired)
     , m_protocolVersion(NetworkPackage::ProtocolVersion) //We don't know it yet
@@ -47,7 +47,7 @@ Device::Device(QObject* parent, const QString& id)
 }
 
 Device::Device(QObject* parent, const NetworkPackage& identityPackage, DeviceLink* dl)
-    : QObject(parent)
+    : IDevice(parent)
     , m_deviceId(identityPackage.get<QString>("deviceId"))
     , m_deviceName(identityPackage.get<QString>("deviceName"))
     , m_deviceType(str2type(identityPackage.get<QString>("deviceType")))

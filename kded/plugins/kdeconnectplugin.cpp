@@ -41,3 +41,8 @@ Device const* KdeConnectPlugin::device() const
 {
     return mDevice;
 }
+
+#include "moc_kdeconnectplugin.cpp"
+
+// We have to put this stuff here to avoid linking errors
+#include "../moc_idevice.cpp"

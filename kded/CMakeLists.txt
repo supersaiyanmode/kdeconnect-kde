@@ -27,6 +27,7 @@ set(kded_kdeconnect_SRCS
     filetransferjob.cpp
     daemon.cpp
     device.cpp
+    idevice.h
     kdebugnamespace.cpp
 )
 

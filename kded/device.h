@@ -28,13 +28,13 @@
 #include <QTimer>
 #include <QtCrypto>
 
-#include "networkpackage.h"
+#include "idevice.h"
 
 class DeviceLink;
 class KdeConnectPlugin;
 
 class Device
-    : public QObject
+    : public IDevice
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device")
@@ -55,6 +55,7 @@ class Device
         Phone,
         Tablet,
     };
+
     static DeviceType str2type(QString deviceType);
     static QString type2str(DeviceType deviceType);
 
@@ -111,13 +112,6 @@ private Q_SLOTS:
     void privateReceivedPackage(const NetworkPackage& np);
     void linkDestroyed(QObject* o);
     void pairingTimeout();
-
-Q_SIGNALS:
-    Q_SCRIPTABLE void reachableStatusChanged();
-    Q_SCRIPTABLE void pluginsChanged();
-    Q_SCRIPTABLE void pairingSuccesful();
-    Q_SCRIPTABLE void pairingFailed(const QString& error);
-    Q_SCRIPTABLE void unpaired();
 
 private:
     const QString m_deviceId;
