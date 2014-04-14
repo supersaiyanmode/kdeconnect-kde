@@ -14,10 +14,8 @@ include_directories(
 set(kdeconnect_clipboard_SRCS
     clipboardplugin.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../networkpackage.cpp
     ../../filetransferjob.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

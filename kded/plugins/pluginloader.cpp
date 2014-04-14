@@ -23,7 +23,7 @@
 #include <KServiceTypeTrader>
 
 #include "../kdebugnamespace.h"
-#include "../device.h"
+#include "../idevice.h"
 #include "kdeconnectplugin.h"
 
 PluginLoader* PluginLoader::instance()
@@ -57,9 +57,9 @@ KPluginInfo PluginLoader::getPluginInfo(const QString& name) const
     return KPluginInfo(service);
 }
 
-PluginData PluginLoader::instantiatePluginForDevice(const QString& name, Device* device) const
+PluginData PluginLoader::instantiatePluginForDevice(const QString& name, IDevice* device) const
 {
-    QVariant deviceVariant = QVariant::fromValue<Device*>(device);
+    QVariant deviceVariant = QVariant::fromValue<IDevice*>(device);
     return instantiatePlugin(name, QVariantList() << deviceVariant, device);
 }
 

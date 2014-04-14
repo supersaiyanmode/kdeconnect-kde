@@ -15,10 +15,8 @@ set(kdeconnect_share_SRCS
     shareplugin.cpp
     autoclosingqfile.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../filetransferjob.cpp
     ../../networkpackage.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

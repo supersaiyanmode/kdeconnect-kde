@@ -16,10 +16,8 @@ set(kdeconnect_notifications_SRCS
     notificationsplugin.cpp
     notificationsdbusinterface.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../networkpackage.cpp
     ../../filetransferjob.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

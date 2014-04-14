@@ -16,10 +16,8 @@ set(kdeconnect_sftp_SRCS
     mountloop.cpp
     sftpplugin.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../networkpackage.cpp
     ../../filetransferjob.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

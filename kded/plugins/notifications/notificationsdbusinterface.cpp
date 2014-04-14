@@ -30,7 +30,7 @@
 #include "../../filetransferjob.h"
 #include "notificationsplugin.h"
 
-NotificationsDbusInterface::NotificationsDbusInterface(Device* device, QObject *parent)
+NotificationsDbusInterface::NotificationsDbusInterface(IDevice* device, QObject *parent)
     : QDBusAbstractAdaptor(parent)
     , mDevice(device)
     , mLastId(0)
@@ -144,4 +144,3 @@ QString NotificationsDbusInterface::newId()
 {
     return QString::number(++mLastId);
 }
-

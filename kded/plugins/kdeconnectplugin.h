@@ -29,7 +29,7 @@
 #include <KPluginLoader>
 
 #include "../networkpackage.h"
-#include "../device.h"
+#include "../idevice.h"
 
 class KDE_EXPORT KdeConnectPlugin
     : public QObject
@@ -38,8 +38,8 @@ class KDE_EXPORT KdeConnectPlugin
 
 public:
     KdeConnectPlugin(QObject* parent, const QVariantList& args);
-    Device* device();
-    Device const* device() const;
+    IDevice* device();
+    IDevice const* device() const;
 
 public Q_SLOTS:
     /**
@@ -55,7 +55,7 @@ public Q_SLOTS:
     virtual void connected() = 0;
 
 private:
-    Device* mDevice;
+    IDevice* mDevice;
 
     // The Initializer object sets things up, and also does cleanup when it goes out of scope
     // Since the plugins use their own memory, they need their own initializer in order to send encrypted packages

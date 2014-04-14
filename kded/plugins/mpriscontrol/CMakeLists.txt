@@ -14,10 +14,8 @@ include_directories(
 set(kdeconnect_mpriscontrol_SRCS
     mpriscontrolplugin.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../networkpackage.cpp
     ../../filetransferjob.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

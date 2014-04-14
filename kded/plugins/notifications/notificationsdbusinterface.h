@@ -27,7 +27,7 @@
 #include <QStringList>
 #include <QDir>
 
-#include "../../device.h"
+#include "../../idevice.h"
 #include "notification.h"
 
 class NotificationsDbusInterface
@@ -37,7 +37,7 @@ class NotificationsDbusInterface
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.notifications")
 
 public:
-    explicit NotificationsDbusInterface(Device* device, QObject *parent);
+    explicit NotificationsDbusInterface(IDevice* device, QObject *parent);
     virtual ~NotificationsDbusInterface();
 
     void processPackage(const NetworkPackage& np);
@@ -56,7 +56,7 @@ private /*methods*/:
     QString newId(); //Generates successive identifitiers to use as public ids
 
 private /*attributes*/:
-    Device* mDevice;
+    IDevice* mDevice;
     QHash<QString, Notification*> mNotifications;
     QHash<QString, QString> mInternalIdToPublicId;
     int mLastId;

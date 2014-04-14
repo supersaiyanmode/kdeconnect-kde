@@ -21,12 +21,9 @@
 #ifndef CLIPBOARDPLUGIN_H
 #define CLIPBOARDPLUGIN_H
 
-#include <QObject>
 #include <QClipboard>
 
 #include "../kdeconnectplugin.h"
-#include "../../networkpackage.h"
-#include "../../device.h"
 
 #define PACKAGE_TYPE_CLIPBOARD QLatin1String("kdeconnect.clipboard")
 

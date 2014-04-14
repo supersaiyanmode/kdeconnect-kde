@@ -23,6 +23,7 @@
 
 #include <KJob>
 #include <KProcess>
+#include <QTimer>
 
 #include "sftpplugin.h"
 #include "mountloop.h"

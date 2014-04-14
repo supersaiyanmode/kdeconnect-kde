@@ -15,10 +15,8 @@ set(kdeconnect_battery_SRCS
     batteryplugin.cpp
     batterydbusinterface.cpp
     ../kdeconnectplugin.cpp
-    ../pluginloader.cpp
     ../../networkpackage.cpp
     ../../filetransferjob.cpp
-    ../../device.cpp
     ../../kdebugnamespace.cpp
 )
 

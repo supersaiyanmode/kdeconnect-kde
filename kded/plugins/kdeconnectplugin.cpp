@@ -20,24 +20,24 @@
 
 #include "kdeconnectplugin.h"
 
-#include "../device.h"
+#include "../idevice.h"
 
 KdeConnectPlugin::KdeConnectPlugin(QObject* parent, const QVariantList& args)
     : QObject(parent)
 {
     if (!args.isEmpty()) {
-        mDevice = qvariant_cast< Device* >(args.first());
+        mDevice = qvariant_cast< IDevice* >(args.first());
     } else {
         mDevice = 0;
     }
 }
 
-Device* KdeConnectPlugin::device()
+IDevice* KdeConnectPlugin::device()
 {
     return mDevice;
 }
 
-Device const* KdeConnectPlugin::device() const
+IDevice const* KdeConnectPlugin::device() const
 {
     return mDevice;
 }

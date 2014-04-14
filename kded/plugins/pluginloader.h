@@ -29,7 +29,7 @@
 #include <KService>
 #include <KPluginInfo>
 
-class Device;
+class IDevice;
 class KdeConnectPlugin;
 
 struct PluginData
@@ -48,7 +48,7 @@ public:
 
     QStringList getPluginList() const;
     KPluginInfo getPluginInfo(const QString& name) const;
-    PluginData instantiatePluginForDevice(const QString& name, Device* device) const;
+    PluginData instantiatePluginForDevice(const QString& name, IDevice *device) const;
     PluginData instantiatePlugin(const QString& name, const QVariantList& args, QObject* parent = 0) const;
 
     void loadStandalonePlugins(QObject* parent = 0) const;
