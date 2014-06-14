@@ -11,3 +11,9 @@ add_subdirectory(share)
 add_subdirectory(notifications)
 add_subdirectory(sftp)
 
+find_package (TelepathyQt4 0.9.2.1)
+if (TelepathyQt4_FOUND)
+    message(STATUS "TelepathyQt is found, so connection manager will be built")
+    add_subdirectory(telepathy)
+endif ()
+

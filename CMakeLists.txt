@@ -27,5 +27,6 @@ add_subdirectory(kded)
 add_subdirectory(plugins)
 add_subdirectory(plasmoid)
 add_subdirectory(cli)
+add_subdirectory(telepathy-cm)
 
 add_subdirectory(tests)
