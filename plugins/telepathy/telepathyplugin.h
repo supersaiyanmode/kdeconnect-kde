@@ -21,8 +21,7 @@
 #ifndef TELEPATHYPLUGIN_H
 #define TELEPATHYPLUGIN_H
 
-#include "../kdeconnectplugin.h"
-#include "../../networkpackage.h"
+#include <core/kdeconnectplugin.h>
 
 #define PACKAGE_TYPE_TELEPATHY QLatin1String("kdeconnect.telepathy")
 

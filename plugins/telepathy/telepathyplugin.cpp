@@ -25,7 +25,7 @@
 #include <TelepathyQt/Debug>
 #include <TelepathyQt/Types>
 
-#include "../../kdebugnamespace.h"
+#include <core/kdebugnamespace.h>
 
 #include <SimpleCM/Protocol>
 
