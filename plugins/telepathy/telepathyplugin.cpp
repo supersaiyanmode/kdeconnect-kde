@@ -33,7 +33,7 @@
 
 #include <QDebug>
 
-static SimpleProtocol *g_proto = 0;
+// static SimpleProtocol *g_proto = 0;
 
 K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< TelepathyPlugin >(); )
 K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_telepathy", "kdeconnect-kded") )
@@ -45,26 +45,26 @@ TelepathyPlugin::TelepathyPlugin(QObject *parent, const QVariantList &args)
     Tp::enableDebug(true);
     Tp::enableWarnings(true);
 
-    if (g_proto) {
-        connect(g_proto, SIGNAL(messageReceived(QString,QString)), SLOT(sendMessage(QString,QString)));
-        return;
-    }
+//     if (g_proto) {
+//         connect(g_proto, SIGNAL(messageReceived(QString,QString)), SLOT(sendMessage(QString,QString)));
+//         return;
+//     }
 
-    static Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<SimpleProtocol>(
-            QDBusConnection::sessionBus(),
-            QLatin1String("kdeconnect"));
-    static Tp::BaseConnectionManagerPtr cm = Tp::BaseConnectionManager::create(
-            QDBusConnection::sessionBus(), QLatin1String("kdeconnect"));
+//     static Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<SimpleProtocol>(
+//             QDBusConnection::sessionBus(),
+//             QLatin1String("kdeconnect"));
+//     static Tp::BaseConnectionManagerPtr cm = Tp::BaseConnectionManager::create(
+//             QDBusConnection::sessionBus(), QLatin1String("kdeconnect"));
 
-    g_proto = static_cast<SimpleProtocol*> (proto.data());
+//     g_proto = static_cast<SimpleProtocol*> (proto.data());
 
-    g_proto->setConnectionManagerName(cm->name());
-    g_proto->setEnglishName(QLatin1String("KDE Connect"));
-    g_proto->setIconName(QLatin1String("kdeconnect"));
-    g_proto->setVCardField(QLatin1String("phone_number"));
-
-    cm->addProtocol(proto);
-    cm->registerObject();
+//     g_proto->setConnectionManagerName(cm->name());
+//     g_proto->setEnglishName(QLatin1String("KDE Connect"));
+//     g_proto->setIconName(QLatin1String("kdeconnect"));
+//     g_proto->setVCardField(QLatin1String("phone_number"));
+//
+//     cm->addProtocol(proto);
+//     cm->registerObject();
 }
 
 bool TelepathyPlugin::receivePackage(const NetworkPackage& np)
@@ -88,14 +88,14 @@ bool TelepathyPlugin::receivePackage(const NetworkPackage& np)
             const QString phoneNumber = np.get<QString>("phoneNumber", i18n("unknown number"));
             const QString messageBody = np.get<QString>("messageBody", "");
 
-            g_proto->sendMessage(phoneNumber, messageBody);
+//             g_proto->sendMessage(phoneNumber, messageBody);
         }
         return true;
     } else if (np.type() == QLatin1String("kdeconnect.telepathy")) {
-        QStringList cards = np.get<QStringList>("numbers");
+        QStringList cards = np.get<QStringList>("numbers", QStringList());
 
         qDebug() << cards;
-        g_proto->setContactList(cards);
+//         g_proto->setContactList(cards);
     }
 
 //    g_proto->sendMessage(np.type(), np.get<QStringList>("numbers").join(" "));
