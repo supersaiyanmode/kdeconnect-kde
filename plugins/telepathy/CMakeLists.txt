@@ -16,6 +16,7 @@ kde4_add_plugin(kdeconnect_telepathy ${kdeconnect_telepathy_SRCS})
 
 target_link_libraries(kdeconnect_telepathy
    kdeconnectcore
+   connectcm
    ${TELEPATHY_QT4_LIBRARIES}
    ${TELEPATHY_QT4_SERVICE_LIBRARIES}
    ${KDEPIMLIBS_KABC_LIBS}

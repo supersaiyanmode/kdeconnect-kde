@@ -22,6 +22,7 @@
 #define TELEPATHYPLUGIN_H
 
 #include <core/kdeconnectplugin.h>
+#include "telepathy-cm/kdeconnecttelepathyprotocol.h"
 
 #define PACKAGE_TYPE_TELEPATHY QLatin1String("kdeconnect.telepathy")
 
@@ -39,6 +40,8 @@ public Q_SLOTS:
 private Q_SLOTS:
     void sendMessage(/*const QString &deviceId, */const QString &receiver, const QString &message);
 
+private:
+    SimpleProtocolPtr m_protocol;
 };
 
 #endif // TELEPATHYPLUGIN_H
