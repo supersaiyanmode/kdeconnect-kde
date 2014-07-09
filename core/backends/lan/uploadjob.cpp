@@ -22,6 +22,8 @@
 
 #include "kdebugnamespace.h"
 #include "uploadjob.h"
+#include "../../kdebugnamespace.h"
+
 
 UploadJob::UploadJob(const QSharedPointer<QIODevice>& source): KJob()
 {

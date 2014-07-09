@@ -42,7 +42,7 @@ void ClipboardPlugin::clipboardChanged(QClipboard::Mode mode)
         ignore_next_clipboard_change = false;
         return;
     }
-    //kDebug(kdeconnect_kded()) << "ClipboardChanged";
+    kDebug(debugArea()) << "ClipboardChanged";
     NetworkPackage np(PACKAGE_TYPE_CLIPBOARD);
     np.set("content",clipboard->text());
     sendPackage(np);

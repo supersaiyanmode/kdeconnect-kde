@@ -34,12 +34,12 @@ K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_ping", "kdeconnect-plugins"
 PingPlugin::PingPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
-    //kDebug(debugArea()) << "Ping plugin constructor for device" << device()->name();
+    kDebug(debugArea()) << "Ping plugin constructor for device" << device()->name();
 }
 
 PingPlugin::~PingPlugin()
 {
-    //kDebug(debugArea()) << "Ping plugin destructor for device" << device()->name();
+    kDebug(debugArea()) << "Ping plugin destructor for device" << device()->name();
 }
 
 bool PingPlugin::receivePackage(const NetworkPackage& np)

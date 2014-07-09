@@ -52,7 +52,7 @@ void FileTransferJob::openFinished(KJob* job)
 void FileTransferJob::start()
 {
     QMetaObject::invokeMethod(this, "doStart", Qt::QueuedConnection);
-    //kDebug(debugArea()) << "FileTransferJob start";
+    kDebug(debugArea()) << "FileTransferJob start";
 }
 
 void FileTransferJob::doStart()
@@ -136,7 +136,7 @@ void FileTransferJob::open(KIO::Job* job)
 {
     Q_UNUSED(job);
 
-    //kDebug(debugArea()) << "FileTransferJob open";
+    kDebug(debugArea()) << "FileTransferJob open";
 
     if (!mOrigin) {
         kDebug(debugArea()) << "FileTransferJob: Origin is null";
@@ -161,7 +161,7 @@ void FileTransferJob::readyRead()
     mWritten += data.size();
     setProcessedAmount(Bytes, mWritten);
 
-    //kDebug(debugArea()) << "readyRead" << mSize << mWritten << bytes;
+    kDebug(debugArea()) << "readyRead" << mSize << mWritten << bytes;
 
     if (mSize > -1) {
         //If a least 1 second has passed since last update

@@ -33,6 +33,7 @@
 #include <qjson/qobjecthelper.h>
 
 #include "filetransferjob.h"
+#include "kdebugnamespace.h"
 
 const QCA::EncryptionAlgorithm NetworkPackage::EncryptionAlgorithm = QCA::EME_PKCS1v15;
 const int NetworkPackage::ProtocolVersion = 5;
@@ -59,7 +60,7 @@ void NetworkPackage::createIdentityPackage(NetworkPackage* np)
     np->set("protocolType", "desktop"); //TODO: Detect laptop, tablet, phone...
     np->set("protocolVersion",  NetworkPackage::ProtocolVersion);
 
-    //kDebug(kdeconnect_kded()) << "createIdentityPackage" << np->serialize();
+    kDebug(debugArea()) << "createIdentityPackage" << np->serialize();
 }
 
 QByteArray NetworkPackage::serialize() const
@@ -72,7 +73,7 @@ QByteArray NetworkPackage::serialize() const
     QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(this);
 
     if (hasPayload()) {
-        //kDebug(kdeconnect_kded()) << "Serializing payloadTransferInfo";
+        kDebug(debugArea()) << "Serializing payloadTransferInfo";
         variant["payloadSize"] = payloadSize();
         variant["payloadTransferInfo"] = mPayloadTransferInfo;
     }
@@ -85,7 +86,7 @@ QByteArray NetworkPackage::serialize() const
         kDebug(debugArea()) << "Serialization error:" << serializer.errorMessage();
     } else {
         if (!isEncrypted()) {
-            //kDebug(kDebugArea) << "Serialized package:" << json;
+            kDebug(debugArea()) << "Serialized package:" << json;
         }
         json.append('\n');
     }
@@ -108,7 +109,7 @@ bool NetworkPackage::unserialize(const QByteArray& a, NetworkPackage* np)
     QJson::QObjectHelper::qvariant2qobject(variant, np);
 
     if (!np->isEncrypted()) {
-        //kDebug(kDebugArea) << "Unserialized: " << a;
+        kDebug(debugArea()) << "Unserialized: " << a;
     }
 
     np->mPayloadSize = variant["payloadSize"].toInt(); //Will return 0 if was not present, which is ok
@@ -136,7 +137,7 @@ void NetworkPackage::encrypt(QCA::PublicKey& key)
         chunks.append( encryptedChunk.toBase64() );
     }
 
-    //kDebug(kdeconnect_kded()) << chunks.size() << "chunks";
+    kDebug(debugArea()) << chunks.size() << "chunks";
 
     mId = QString::number(QDateTime::currentMSecsSinceEpoch());
     mType = PACKAGE_TYPE_ENCRYPTED;

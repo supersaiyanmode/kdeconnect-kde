@@ -72,7 +72,7 @@ Daemon::Daemon(QObject *parent)
         kDebug(debugArea()) << "My id:" << uuid;
     }
 
-    //kDebug(debugArea()) << "QCA supported capabilities:" << QCA::supportedFeatures().join(",");
+    kDebug(debugArea()) << "QCA supported capabilities:" << QCA::supportedFeatures().join(",");
     if(!QCA::isSupported("rsa")) {
         //TODO: Maybe display this in a more visible way?
         kWarning(debugArea()) << "Error: KDE Connect could not find support for RSA in your QCA installation, if your distribution provides"
@@ -185,14 +185,14 @@ void Daemon::onNewDeviceLink(const NetworkPackage& identityPackage, DeviceLink* 
 
     const QString& id = identityPackage.get<QString>("deviceId");
 
-    //kDebug(debugArea()) << "Device discovered" << id << "via" << dl->provider()->name();
+    kDebug(debugArea()) << "Device discovered" << id << "via" << dl->provider()->name();
 
     if (d->mDevices.contains(id)) {
-        //kDebug(debugArea()) << "It is a known device";
+        kDebug(debugArea()) << "It is a known device";
         Device* device = d->mDevices[id];
         device->addLink(identityPackage, dl);
     } else {
-        //kDebug(debugArea()) << "It is a new device";
+        kDebug(debugArea()) << "It is a new device";
 
         Device* device = new Device(this, identityPackage, dl);
         connect(device, SIGNAL(reachableStatusChanged()), this, SLOT(onDeviceReachableStatusChanged()));
@@ -213,7 +213,7 @@ void Daemon::onDeviceReachableStatusChanged()
 
     Q_EMIT deviceVisibilityChanged(id, device->isReachable());
 
-    //kDebug(debugArea()) << "Device" << device->name() << "reachable status changed:" << device->isReachable();
+    kDebug(debugArea()) << "Device" << device->name() << "reachable status changed:" << device->isReachable();
 
     if (!device->isReachable()) {
 

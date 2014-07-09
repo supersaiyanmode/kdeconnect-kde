@@ -37,7 +37,7 @@ LoopbackLinkProvider::~LoopbackLinkProvider()
 void LoopbackLinkProvider::onNetworkChange(QNetworkSession::State state)
 {
     Q_UNUSED(state);
-    //kDebug(kdeconnect_kded()) << "Echo Device discovery emitted";
+    kDebug(debugArea()) << "Echo Device discovery emitted";
 
     LoopbackDeviceLink* newLoopbackDeviceLink = new LoopbackDeviceLink("loopback", this);
     Q_EMIT onConnectionReceived(identityPackage, newLoopbackDeviceLink);

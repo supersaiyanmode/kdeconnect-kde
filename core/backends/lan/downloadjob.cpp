@@ -19,6 +19,8 @@
  */
 
 #include "downloadjob.h"
+#include "../../kdebugnamespace.h"
+
 
 DownloadJob::DownloadJob(QHostAddress address, QVariantMap transferInfo): KJob()
 {
@@ -29,7 +31,7 @@ DownloadJob::DownloadJob(QHostAddress address, QVariantMap transferInfo): KJob()
 
 void DownloadJob::start()
 {
-    //kDebug(kdeconnect_kded()) << "DownloadJob Start";
+    kDebug(debugArea()) << "DownloadJob Start";
     mSocket->connectToHost(mAddress, mPort, QIODevice::ReadOnly);
     connect(mSocket.data(), SIGNAL(disconnected()),
             this, SLOT(disconnected()));
@@ -38,12 +40,12 @@ void DownloadJob::start()
 
 void DownloadJob::disconnected()
 {
-    //kDebug(kdeconnect_kded()) << "DownloadJob End";
+    kDebug(debugArea()) << "DownloadJob End";
     emitResult();
 }
 
 QSharedPointer<QIODevice> DownloadJob::getPayload()
 {
-    //kDebug(kdeconnect_kded()) << "getPayload";
+    kDebug(debugArea()) << "getPayload";
     return mSocket.staticCast<QIODevice>();
 }

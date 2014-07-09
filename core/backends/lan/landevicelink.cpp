@@ -29,6 +29,8 @@
 #include "uploadjob.h"
 #include "downloadjob.h"
 #include "socketlinereader.h"
+#include "../../kdebugnamespace.h"
+
 
 LanDeviceLink::LanDeviceLink(const QString& d, LinkProvider* a, QTcpSocket* socket)
     : DeviceLink(d, a)
@@ -80,7 +82,7 @@ void LanDeviceLink::dataReceived()
 
     const QByteArray package = mSocketLineReader->readLine();
 
-    //kDebug(debugArea()) << "LanDeviceLink dataReceived" << package;
+    kDebug(debugArea()) << "LanDeviceLink dataReceived" << package;
 
     NetworkPackage unserialized(QString::null);
     NetworkPackage::unserialize(package, &unserialized);

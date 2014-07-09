@@ -86,7 +86,7 @@ bool SharePlugin::receivePackage(const NetworkPackage& np)
     kDebug(debugArea()) << "File transfer";
 
     if (np.hasPayload()) {
-        //kDebug(debugArea()) << "receiving file";
+        kDebug(debugArea()) << "receiving file";
         QString filename = np.get<QString>("filename", QString::number(QDateTime::currentMSecsSinceEpoch()));
         KUrl destination = destinationDir();
         destination.addPath(filename);

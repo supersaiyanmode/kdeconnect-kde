@@ -233,7 +233,7 @@ static bool lessThan(DeviceLink* p1, DeviceLink* p2)
 
 void Device::addLink(const NetworkPackage& identityPackage, DeviceLink* link)
 {
-    //kDebug(debugArea()) << "Adding link to" << id() << "via" << link->provider();
+    kDebug(debugArea()) << "Adding link to" << id() << "via" << link->provider();
 
     m_protocolVersion = identityPackage.get<int>("protocolVersion");
     if (m_protocolVersion != NetworkPackage::ProtocolVersion) {
@@ -280,7 +280,7 @@ void Device::removeLink(DeviceLink* link)
 {
     m_deviceLinks.removeOne(link);
 
-    //kDebug(debugArea()) << "RemoveLink" << m_deviceLinks.size() << "links remaining";
+    kDebug(debugArea()) << "RemoveLink" << m_deviceLinks.size() << "links remaining";
 
     if (m_deviceLinks.isEmpty()) {
         reloadPlugins();
@@ -313,7 +313,7 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 {
     if (np.type() == PACKAGE_TYPE_PAIR) {
 
-        //kDebug(debugArea()) << "Pair package";
+        kDebug(debugArea()) << "Pair package";
 
         bool wantsPair = np.get<bool>("pair");
 
