@@ -1,0 +1,20 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=KdeConnect/Plugin
+X-KDE-Library=kdeconnect_calendar
+X-KDE-PluginInfo-Author=Yang Qiao
+X-KDE-PluginInfo-Email=yangqiao0505@me.com
+X-KDE-PluginInfo-Name=kdeconnect_calendar
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=http://blog.yangqiao.fr
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+Icon=dialog-ok
+Name=Calendar
+Name[x-test]=xxCalendarxx
+Comment=Synchronize the future 24h calendar
+Comment[x-test]=xxSynchronize the future 24h calendarxx
+
+X-KdeConnect-SupportedPackageType=kdeconnect.calendar
+X-KdeConnect-OutgoingPackageType=kdeconnect.calendar

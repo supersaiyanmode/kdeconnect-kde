@@ -82,7 +82,7 @@ void LanDeviceLink::dataReceived()
 
     const QByteArray package = mSocketLineReader->readLine();
 
-    kDebug(debugArea()) << "LanDeviceLink dataReceived" << package;
+    // kDebug(debugArea()) << "LanDeviceLink dataReceived" << package;
 
     NetworkPackage unserialized(QString::null);
     NetworkPackage::unserialize(package, &unserialized);
