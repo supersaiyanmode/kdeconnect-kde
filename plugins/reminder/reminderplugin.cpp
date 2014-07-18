@@ -59,13 +59,13 @@ bool ReminderPlugin::receivePackage(const NetworkPackage& np)
 	kDebug(debugArea()) << "Reminder plugin received an package from device" << device()->name();
 	QString iCal=np.get<QString>("iCal");
     QString op=np.get<QString>("op");
+    if (np.has("request"){
+        sendCalendar();
+    }
     if (op=="delete")
     {
         QString uid=np.get<QString>("uid");
         deleteIncidence(uid);
-    }
-    else if (op=="request"){
-        sendCalendar();
     }
     else if (op=="merge"){
         KCalCore::Incidence::Ptr incidence=parseICal(iCal);
