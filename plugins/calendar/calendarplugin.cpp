@@ -52,6 +52,10 @@ CalendarPlugin::CalendarPlugin(QObject* parent, const QVariantList& args)
 
 CalendarPlugin::~CalendarPlugin()
 {
+    if (mCalendar){
+        delete(mCalendar);
+    }
+
     kDebug(debugArea()) << "Calendar plugin destructor for device" << device()->name();
 }
 
@@ -60,13 +64,13 @@ bool CalendarPlugin::receivePackage(const NetworkPackage& np)
 	kDebug(debugArea()) << "Calendar plugin received an package from device" << device()->name();
 	QString iCal=np.get<QString>("iCal");
     QString op=np.get<QString>("op");
+    if (np.has("request")){
+        sendCalendar();
+    }
     if (op=="delete")
     {
         QString uid=np.get<QString>("uid");
         deleteIncidence(uid);
-    }
-    else if (op=="request"){
-        sendCalendar();
     }
     else if (op=="merge"){
         KCalCore::Incidence::Ptr incidence=parseICal(iCal);
