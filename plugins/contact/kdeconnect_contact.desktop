@@ -1,0 +1,23 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=KdeConnect/Plugin
+X-KDE-Library=kdeconnect_contact
+X-KDE-PluginInfo-Author=YANG Qiao
+X-KDE-PluginInfo-Email=yangqiao0505@me.com
+X-KDE-PluginInfo-Name=kdeconnect_contact
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=http://blog.yangqiao.fr
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+Icon=edit-paste
+Name=Contact
+
+Name[x-test]=xxContactxx
+Comment=Synchronize contact
+
+Comment[x-test]=xxSynchronize contactxx
+
+X-KdeConnect-SupportedPackageType=kdeconnect.contact
+X-KdeConnect-OutgoingPackageType=kdeconnect.contact
+

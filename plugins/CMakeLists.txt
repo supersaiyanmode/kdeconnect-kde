@@ -11,4 +11,5 @@ add_subdirectory(mousepad)
 add_subdirectory(share)
 add_subdirectory(notifications)
 add_subdirectory(sftp)
+add_subdirectory(contact)
 
