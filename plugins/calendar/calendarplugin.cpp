@@ -85,7 +85,7 @@ void CalendarPlugin::connected()
 
 void CalendarPlugin::delayedRequest()
 {
-    if (mCalendar.items().count()==0)
+    if (mCalendar.items(mCollection.id()).count()==0)
     {   
         NetworkPackage np(PACKAGE_TYPE_CALENDAR);
         np.set("request",true);
@@ -170,7 +170,10 @@ void CalendarPlugin::sendCalendar()
         KCalCore::Incidence::Ptr incidence=itemToIncidence(item);
         mSentInfoList.append(incidenceToInfo(incidence));
     }
-
+    
+    //Why the count accumulate?!
+    kDebug(debugArea())<<"infolist count"<<mSentInfoList.count();
+    kDebug(debugArea())<<"item count"<<mCalendar.items(mCollection.id()).count();
     //send calendar
     KCalCore::ICalFormat ical;
     foreach(Akonadi::Item item,mCalendar.items(mCollection.id()))
@@ -179,9 +182,6 @@ void CalendarPlugin::sendCalendar()
         QList<KDateTime> datelist=incidence->startDateTimesForDate(QDate::currentDate(),KDateTime::LocalZone);
         datelist+=incidence->startDateTimesForDate(QDate::currentDate().addDays(1),KDateTime::LocalZone);
         if (datelist.length()==0){
-            continue;
-        }
-        if (datelist.last()<KDateTime::currentDateTime(KDateTime::LocalZone)){
             continue;
         }
         QString str=ical.toICalString(incidence);
@@ -258,8 +258,6 @@ void CalendarPlugin::deleteIncidence(QString& uid)
 void CalendarPlugin::mergeIncidence(KCalCore::Incidence::Ptr& incidence)
 {
     kDebug(debugArea())<<"merge incidence"<<incidence->summary();
-    //FIXME it's dangerous when receive two same incidence to add at the same time
-    // a duplicate will occur
     Akonadi::Item item=mCalendar.item(incidence->uid());
     if (item.isValid()){
         KCalCore::Incidence::Ptr oldInc=itemToIncidence(item);
@@ -286,13 +284,8 @@ bool CalendarPlugin::calendarDidChanged()
         kDebug(debugArea()) << "comparing incidences";
         KCalCore::Incidence::Ptr incidence=itemToIncidence(newItemList[i]);
         IncidenceInfo newInfo=incidenceToInfo(incidence);
-        QList<KDateTime> datelist=newInfo.s_date;
-        if (datelist.empty()){
+        if (newInfo.s_date.empty()){
             kDebug(debugArea()) << "datelist empty";
-            continue;
-        }
-        if (datelist.last()<KDateTime::currentLocalDateTime()){
-            kDebug(debugArea()) << "date limit not match";
             continue;
         }
         IncidenceInfo oldInfo=mSentInfoList[i];
