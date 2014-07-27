@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(KDE4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(QCA2 REQUIRED)
+find_package(KdepimLibs REQUIRED)
 
 #if(CMAKE_COMPILER_IS_GNUCXX)
 #    add_definitions(-std=gnu++0x)
