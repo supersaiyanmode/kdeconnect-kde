@@ -25,6 +25,8 @@
 
 #include <core/kdeconnectplugin.h>
 #include <Akonadi/Calendar/ETMCalendar>
+#include <Akonadi/Collection>
+#include <KCalCore/Incidence>
 
 #define PACKAGE_TYPE_CALENDAR QLatin1String("kdeconnect.calendar")
 
@@ -41,14 +43,16 @@ private:
         QList<KDateTime> s_date;
         QList<KDateTime> e_date;
     }IncidenceInfo;
-	Akonadi::ETMCalendar* mCalendar;
+	Akonadi::ETMCalendar mCalendar;
+    Akonadi::Collection mCollection;
     QList<IncidenceInfo> mSentInfoList;
-    //TODO clean it up using overload of operators or create own classes to make it more structural
+    QString mResourceId;
     KCalCore::Incidence::Ptr itemToIncidence(const Akonadi::Item &item);
     IncidenceInfo  incidenceToInfo(KCalCore::Incidence::Ptr& incidence);
     bool incidenceIsIden(KCalCore::Incidence::Ptr& incidence1,KCalCore::Incidence::Ptr& incidence2);
     bool incidenceIsIden(IncidenceInfo info1,IncidenceInfo info2);
 
+    int setupResource();
     bool calendarDidChanged();
     void sendCalendar();
     void addIncidence(KCalCore::Incidence::Ptr& incidence);
@@ -69,7 +73,7 @@ public Q_SLOTS:
 private slots:
     void delayedRequest();
     void calendarChanged();
-
+    void collectionFetchResult(KJob*);
     void createFinished(bool success, const QString &errorMessage);
     void deleteFinished(bool success, const QString &errorMessage);
     void modifyFinished(bool success, const QString &errorMessage);
