@@ -20,8 +20,12 @@
 
 #include "contactplugin.h"
 #include <core/kdebugnamespace.h>
+
+#include <Akonadi/AgentManager>
+#include <Akonadi/AgentInstanceCreateJob>
 #include <Akonadi/Control>
 #include <Akonadi/CollectionFetchScope>
+#include <Akonadi/CollectionModifyJob>
 #include <Akonadi/CollectionFetchJob>
 #include <Akonadi/ItemCreateJob>
 #include <Akonadi/ItemDeleteJob>
@@ -30,7 +34,11 @@
 #include <Akonadi/ChangeRecorder>
 #include <akonadi/itemfetchscope.h>
 #include <KABC/VCardConverter>
-
+#include <KSharedConfig>
+#include <KConfigGroup>
+#include <QDBusConnection>
+#include <QDBusMessage>
+ 
 K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< ContactPlugin >(); )
 K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_contact", "kdeconnect-plugins") )
 
@@ -40,6 +48,7 @@ ContactPlugin::ContactPlugin(QObject* parent, const QVariantList& args)
 	if ( !Akonadi::Control::start() ) {
            kDebug(debugArea()) <<"Akonadi failed to start";
     }
+    setupResource();
     kDebug(debugArea()) << "Contact plugin constructor for device" << device()->name();
 }
 
@@ -49,46 +58,117 @@ bool ContactPlugin::receivePackage(const NetworkPackage& np)
     QString vcards=np.get<QString>("vcard");
     QString op=np.get<QString>("op");
     if(np.has("request")){
-        isRequest=true;
-        fetchItems();
+        
     }
-    if (op=="delete"){
-        QString uid=np.get<QString>("uid");
-        deleteContact(uid);
+    if (op=="delet"){
+        if (np.has("uid"))
+        {
+            QString uid=np.get<QString>("uid");
+            deleteContact(uid);
+        }
+        else if (np.has("id"))
+        {
+            int id=np.get<int>("id");
+            QString rid=device()->id()+QString::number(id);
+            deleteContact(rid);
+        }
     }
     else if (op=="merge")
     {
-        kDebug(debugArea())<<"merge vcard"<<vcards;
+        int id=np.get<int>("id");
+        QString rid=device()->id()+QString::number(id);
+        kDebug(debugArea())<<"merge vcard"<<"rid:"<<rid<<"\n"<<vcards;
         KABC::VCardConverter convertor;
-        KABC::Addressee::List addr=convertor.parseVCards(vcards.toLocal8Bit());
-        mergeContacts(addr);
+        KABC::Addressee addr=convertor.parseVCard(vcards.toLocal8Bit());
+        mergeContacts(addr,rid);
     }
     return true;
 }
 
 void ContactPlugin::connected()
 {
-    fetchCollection();
-    fetchItems();
+    // fetchItems();
 	// QTimer::singleShot( 3000, this, SLOT( delayedRequest() ) );
 }
 
 void ContactPlugin::delayedRequest()
 {
-    if (1)
-    {   
-        NetworkPackage np(PACKAGE_TYPE_CONTACT);
-		np.set("request",true);
-		sendPackage(np);
+    NetworkPackage np(PACKAGE_TYPE_CONTACT);
+	np.set("request",true);
+	sendPackage(np);
+}
+
+int ContactPlugin::setupResource()
+{
+    KSharedConfigPtr config = KSharedConfig::openConfig("kdeconnectrc");
+    KConfigGroup data = config->group("trusted_devices").group(device()->id());
+
+    resID= data.readEntry<QString>("contacts_resource_id", QLatin1String(""));
+    if (resID!="")
+    {
+        kDebug(debugArea())<<" res id in config file"<<resID;
+        Akonadi::AgentInstance mAgentInstance=Akonadi::AgentManager::self()->instance(resID);
+        if (!mAgentInstance.isValid()){
+            resID="";
+            kDebug(debugArea())<<"instance non valid";
+        }
     }
+
+    if (resID=="")
+    {
+        Akonadi::AgentInstanceCreateJob *job = new Akonadi::AgentInstanceCreateJob( "akonadi_contacts_resource", this );
+        job->exec();
+        if ( job->error() ) {
+            kDebug(debugArea())<< "Create calendar failed:" << job->errorString();
+            return -1;
+        }
+        resID=job->instance().identifier();
+        config->group("trusted_devices").group(device()->id()).writeEntry("contacts_resource_id",resID);
+        config->sync();
+        QDBusMessage msg = QDBusMessage::createMethodCall("org.freedesktop.Akonadi.Agent."+resID, "/Settings", "org.kde.Akonadi.ICalDirectory.Settings", "setPath");
+        QList<QVariant> args;
+        args.append("kdeconnect_contact/"+device()->id());
+        msg.setArguments(args);
+        bool queued= QDBusConnection::sessionBus().send(msg);
+        job->instance().synchronize();
+    }
+    //wait a bit then fetch collection
+    Akonadi::CollectionFetchJob *job = new Akonadi::CollectionFetchJob(Akonadi::Collection::root(),
+            Akonadi::CollectionFetchJob::Recursive,
+            this);
+    job->fetchScope().setContentMimeTypes(QStringList() << KABC::Addressee::mimeType() );
+    job->setResource(resID);
+    connect(job, SIGNAL(result(KJob*)), SLOT(collectionFetchResult(KJob*)));
+    return 0;
+}
+
+void ContactPlugin::collectionFetchResult(KJob* job)
+{
+    Akonadi::CollectionFetchJob *fetchJob = static_cast<Akonadi::CollectionFetchJob*>( job );
+    if (fetchJob->collections().count()==0){
+        kDebug(debugArea())<<"no collection";
+    }else{
+        kDebug(debugArea())<<"got the collection";
+        mCollection=fetchJob->collections().first();
+    }
+    
+    if (!mCollection.isValid()){
+        kDebug(debugArea())<<"collection fetch failed";
+    }
+    mCollection.setName(device()->name());
+    Akonadi::CollectionModifyJob *job2 = new Akonadi::CollectionModifyJob( mCollection );
+    job2->exec();
+    mCollection=job2->collection();
+    kDebug(debugArea())<<mCollection;
 }
 
 void ContactPlugin::sendContacts()
 {
     KABC::VCardConverter convertor;
     KABC::Addressee::List list;
-    foreach(Akonadi::Item item,mlist)
+    foreach(QString uid,mItemMap.keys())
     {
+        Akonadi::Item item=mItemMap[uid];
         if ( !item.isValid() ) {
             kWarning() << "Item not valid";
             // return;
@@ -98,55 +178,53 @@ void ContactPlugin::sendContacts()
         NetworkPackage np(PACKAGE_TYPE_CONTACT);
         np.set("vcard",str);
         np.set("op","merge");
+        np.set("uid",uid);
         sendPackage(np);
-        kDebug(debugArea())<<"generate vcard";
-        kDebug(debugArea())<<str;
     }
 }
 
 void  ContactPlugin::deleteContact(QString& uid)
 {
-
-}
-
-void ContactPlugin::addContacts(KABC::Addressee::List& list)
-{
-    foreach(KABC::Addressee addr, list)
+    if (mItemMap.contains(uid))
     {
-        Akonadi::Item item;
-        item.setPayload<KABC::Addressee>( addr );
-        item.setMimeType( KABC::Addressee::mimeType() );
-
-        Akonadi::ItemCreateJob* job=new Akonadi::ItemCreateJob(item,mCollection,this);
-        connect( job, SIGNAL( result( KJob* ) ), SLOT( contactCreateResult( KJob* ) ) );
+        Akonadi::Item item=mItemMap[uid];
+        Akonadi::ItemDeleteJob* job=new Akonadi::ItemDeleteJob(item);
+        connect( job, SIGNAL( result( KJob* ) ), SLOT( contactRemoveResult( KJob* ) ) );
     }
 }
 
-void ContactPlugin::mergeContacts(KABC::Addressee::List& list)
+void ContactPlugin::addContacts(KABC::Addressee addr,QString& uid)
 {
-    addContacts(list);
+    kDebug(debugArea())<<"adding contact"<<uid;
+    Akonadi::Item item;
+    item.setPayload<KABC::Addressee>( addr );
+    item.setMimeType( KABC::Addressee::mimeType() );
+    Akonadi::ItemCreateJob* job=new Akonadi::ItemCreateJob(item,mCollection,this);
+    connect( job, SIGNAL( result( KJob* ) ), SLOT( contactCreateResult( KJob* ) ) );
 }
 
-void ContactPlugin::fetchCollection()
+void ContactPlugin::modifyContact(KABC::Addressee addr,QString& uid)
 {
-    Akonadi::CollectionFetchJob *job = new Akonadi::CollectionFetchJob(Akonadi::Collection::root(),
-            Akonadi::CollectionFetchJob::Recursive,
-            this);
-    // Get list of collections
-    job->fetchScope().setContentMimeTypes(QStringList() << KABC::Addressee::mimeType());
-    job->exec();
+    Akonadi::Item item=mItemMap[uid];
+    item.setPayload<KABC::Addressee>( addr );
+    Akonadi::ItemModifyJob* job=new Akonadi::ItemModifyJob(item,this);
+    connect( job, SIGNAL( result( KJob* ) ), SLOT( contactModifyResult( KJob* ) ) );
+}
 
-    Akonadi::Collection::List collections = job->collections();
-    if (collections.count()<=0){
-        kDebug(debugArea())<<"no collection";
+void ContactPlugin::mergeContacts(KABC::Addressee addr,QString& uid)
+{
+    if (mItemMap.contains(uid)){
+        modifyContact(addr,uid);
+    }else{
+        addContacts(addr,uid);
     }
-    mCollection=collections.first();    
 }
 
 void ContactPlugin::fetchItems()
 {
     kDebug(debugArea())<<"fetchItems";
     Akonadi::ItemFetchJob *fetchJob = new Akonadi::ItemFetchJob( mCollection, this );
+
     fetchJob->fetchScope().fetchFullPayload();
     connect( fetchJob, SIGNAL( result( KJob* ) ), SLOT( itemFetchDone( KJob*) ) );
 }
@@ -164,10 +242,10 @@ void ContactPlugin::itemFetchDone(KJob* job)
         kWarning() << "Job did not retrieve any items";
         return;
     }
-    mlist = fetchJob->items();
-    if (isRequest){
-        isRequest=false;
-        sendContacts();
+    mItemMap.clear();
+    foreach(Akonadi::Item item, fetchJob->items()){
+        KABC::Addressee addr=item.payload<KABC::Addressee>();
+        mItemMap.insert(addr.uid(),item);
     }
 }
 
@@ -178,4 +256,22 @@ void ContactPlugin::contactCreateResult( KJob* job)
         return;
     }
     kDebug(debugArea())<<"contact created ";
+}
+
+void ContactPlugin::contactRemoveResult( KJob* job)
+{
+    if ( job->error() != KJob::NoError ) {
+        kDebug(debugArea())<<"remove error:"<<job->errorString();;
+        return;
+    }
+    kDebug(debugArea())<<"contact removed ";
+}
+
+void ContactPlugin::contactModifyResult( KJob* job)
+{
+    if ( job->error() != KJob::NoError ) {
+        kDebug(debugArea())<<"modify error:"<<job->errorString();;
+        return;
+    }
+    kDebug(debugArea())<<"contact modified ";
 }

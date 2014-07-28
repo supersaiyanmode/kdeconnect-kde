@@ -28,7 +28,7 @@
 #include <KABC/Addressee>
 #include <KJob>
 #include <Akonadi/Collection>
- #include <Akonadi/Item>
+#include <Akonadi/Item>
 
 #define PACKAGE_TYPE_CONTACT QLatin1String("kdeconnect.contact")
 
@@ -38,21 +38,26 @@ class ContactPlugin
     Q_OBJECT
 private:
 	Akonadi::Collection mCollection;
-	Akonadi::Item::List mlist;
+    QString resID;
+	QMap<QString,Akonadi::Item> mItemMap;
 	bool isRequest;
 public:
     explicit ContactPlugin(QObject *parent, const QVariantList &args);
+    int setupResource();
     void sendContacts();
     void deleteContact(QString& uid);
-    void addContacts(KABC::Addressee::List& list);
-    void mergeContacts(KABC::Addressee::List& list);
-    void fetchCollection();
+    void addContacts(KABC::Addressee addr, QString& rid);
+    void modifyContact(KABC::Addressee addr,QString& uid);
+    void mergeContacts(KABC::Addressee addr, QString& rid);
     void fetchItems();
 public Q_SLOTS:
     virtual bool receivePackage(const NetworkPackage& np);
     virtual void connected();
     void delayedRequest();
     void contactCreateResult( KJob* job);
+    void contactRemoveResult( KJob* job);
+    void contactModifyResult( KJob* job);
+    void collectionFetchResult(KJob*);
     void itemFetchDone(KJob* job);
 };
 
