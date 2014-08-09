@@ -50,41 +50,62 @@ KPluginInfo PluginLoader::getPluginInfo(const QString& name) const
 {
     KService::Ptr service = plugins[name];
     if (!service) {
-        kDebug(kdeconnect_kded()) << "Plugin unknown" << name;
+        kDebug(debugArea()) << "Plugin unknown" << name;
         return KPluginInfo();
     }
 
     return KPluginInfo(service);
 }
 
-PluginData PluginLoader::instantiatePluginForDevice(const QString& name, Device* device) const
+KdeConnectPlugin* PluginLoader::instantiatePluginForDevice(const QString& name, Device* device) const
 {
-    PluginData ret;
+    KdeConnectPlugin* ret = 0;
 
     KService::Ptr service = plugins[name];
     if (!service) {
-        kDebug(kdeconnect_kded()) << "Plugin unknown" << name;
+        kDebug(debugArea()) << "Plugin unknown" << name;
         return ret;
     }
 
     KPluginFactory *factory = KPluginLoader(service->library()).factory();
     if (!factory) {
-        kDebug(kdeconnect_kded()) << "KPluginFactory could not load the plugin:" << service->library();
+        kDebug(debugArea()) << "KPluginFactory could not load the plugin:" << service->library();
         return ret;
     }
 
-    ret.interfaces = service->property("X-KdeConnect-SupportedPackageType", QVariant::StringList).toStringList();
+    QStringList outgoingInterfaces = service->property("X-KdeConnect-OutgoingPackageType", QVariant::StringList).toStringList();
 
     QVariant deviceVariant = QVariant::fromValue<Device*>(device);
 
-    //FIXME any reason to use QObject in template param instead KdeConnectPlugin?
-    ret.plugin = factory->create<KdeConnectPlugin>(device, QVariantList() << deviceVariant);
-    if (!ret.plugin) {
-        kDebug(kdeconnect_kded()) << "Error loading plugin";
+    ret = factory->create<KdeConnectPlugin>(device, QVariantList() << deviceVariant << outgoingInterfaces);
+    if (!ret) {
+        kDebug(debugArea()) << "Error loading plugin";
         return ret;
     }
 
-    kDebug(kdeconnect_kded()) << "Loaded plugin:" << service->name();
+    kDebug(debugArea()) << "Loaded plugin:" << service->name();
     return ret;
 }
 
+KService::Ptr PluginLoader::pluginService(const QString& pluginName) const
+{
+    return plugins[pluginName];
+}
+
+QStringList PluginLoader::incomingInterfaces() const
+{
+    QSet<QString> ret;
+    foreach(const KService::Ptr& service, plugins) {
+        ret += service->property("X-KdeConnect-SupportedPackageType", QVariant::StringList).toStringList().toSet();
+    }
+    return ret.toList();
+}
+
+QStringList PluginLoader::outgoingInterfaces() const
+{
+    QSet<QString> ret;
+    foreach(const KService::Ptr& service, plugins) {
+        ret += service->property("X-KdeConnect-OutgoingPackageType", QVariant::StringList).toStringList().toSet();
+    }
+    return ret.toList();
+}

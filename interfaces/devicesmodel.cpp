@@ -26,9 +26,10 @@
 #include <KConfigGroup>
 #include <KIcon>
 
-#include "kdebugnamespace.h"
+#include <core/kdebugnamespace.h>
+
+#include "dbusinterfaces.h"
 // #include "modeltest.h"
-#include "interfaces/dbusinterfaces.h"
 
 DevicesModel::DevicesModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -55,6 +56,7 @@ DevicesModel::DevicesModel(QObject *parent)
     //Role names for QML
     QHash<int, QByteArray> names = roleNames();
     names.insert(IdModelRole, "deviceId");
+    names.insert(IconNameRole, "iconName");
     setRoleNames(names);
 }
 
@@ -84,19 +86,14 @@ void DevicesModel::deviceStatusChanged(const QString& id)
     refreshDeviceList();
 }
 
-DevicesModel::StatusFlags DevicesModel::displayFilter() const
+int DevicesModel::displayFilter() const
 {
     return m_displayFilter;
 }
 
 void DevicesModel::setDisplayFilter(int flags)
 {
-    setDisplayFilter((StatusFlags)flags);
-}
-
-void DevicesModel::setDisplayFilter(DevicesModel::StatusFlags flags)
-{
-    m_displayFilter = flags;
+    m_displayFilter = (StatusFlag)flags;
     refreshDeviceList();
 }
 
@@ -109,16 +106,19 @@ void DevicesModel::refreshDeviceList()
     }
 
     if (!m_dbusInterface->isValid()) {
+        kDebug(debugArea()) << "dbus interface not valid";
         return;
     }
-
 
     bool onlyPaired = (m_displayFilter & StatusPaired);
     bool onlyReachable = (m_displayFilter & StatusReachable);
 
     QDBusPendingReply<QStringList> pendingDeviceIds = m_dbusInterface->devices(onlyReachable, onlyPaired);
     pendingDeviceIds.waitForFinished();
-    if (pendingDeviceIds.isError()) return;
+    if (pendingDeviceIds.isError()) {
+        kDebug(debugArea()) << pendingDeviceIds.error();
+        return;
+    }
 
     const QStringList& deviceIds = pendingDeviceIds.value();
     Q_FOREACH(const QString& id, deviceIds) {
@@ -167,8 +167,10 @@ QVariant DevicesModel::data(const QModelIndex& index, int role) const
             }
             return status;
         }
+        case IconNameRole:
+            return device->iconName();
         default:
-             return QVariant();
+            return QVariant();
     }
 }
 

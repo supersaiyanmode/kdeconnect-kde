@@ -57,11 +57,7 @@ Device::Device(QObject* parent, const QString& id)
     const QString& key = data.readEntry<QString>("publicKey", QString());
     m_publicKey = QCA::RSAPublicKey::fromPEM(key);
     
-    //TODO: It is redundant to have our own private key in every instance of Device, move this to a singleton somewhere (Daemon?)
-    const QString privateKeyPath = KStandardDirs::locateLocal("appdata", "key.pem", true, KComponentData("kdeconnect", "kdeconnect"));
-    QFile privKey(privateKeyPath);
-    privKey.open(QIODevice::ReadOnly);
-    m_privateKey = QCA::PrivateKey::fromPEM(privKey.readAll());
+    initPrivateKey();
 
     //Register in bus
     QDBusConnection::sessionBus().registerObject(dbusPath(), this, QDBusConnection::ExportScriptableContents | QDBusConnection::ExportAdaptors);
@@ -74,17 +70,24 @@ Device::Device(QObject* parent, const NetworkPackage& identityPackage, DeviceLin
     , m_deviceType(str2type(identityPackage.get<QString>("deviceType")))
     , m_pairStatus(Device::NotPaired)
     , m_protocolVersion(identityPackage.get<int>("protocolVersion"))
+    , m_incomingCapabilities(identityPackage.get<QStringList>("SupportedIncomingInterfaces", QStringList()).toSet())
+    , m_outgoingCapabilities(identityPackage.get<QStringList>("SupportedOutgoingInterfaces", QStringList()).toSet())
+{
+    initPrivateKey();
+
+    addLink(identityPackage, dl);
+    
+    //Register in bus
+    QDBusConnection::sessionBus().registerObject(dbusPath(), this, QDBusConnection::ExportScriptableContents | QDBusConnection::ExportAdaptors);
+}
+
+void Device::initPrivateKey()
 {
     //TODO: It is redundant to have our own private key in every instance of Device, move this to a singleton somewhere (Daemon?)
     const QString privateKeyPath = KStandardDirs::locateLocal("appdata", "key.pem", true, KComponentData("kdeconnect", "kdeconnect"));
     QFile privKey(privateKeyPath);
     privKey.open(QIODevice::ReadOnly);
     m_privateKey = QCA::PrivateKey::fromPEM(privKey.readAll());
-
-    addLink(identityPackage, dl);
-    
-    //Register in bus
-    QDBusConnection::sessionBus().registerObject(dbusPath(), this, QDBusConnection::ExportScriptableContents | QDBusConnection::ExportAdaptors);
 }
 
 Device::~Device()
@@ -105,7 +108,8 @@ QStringList Device::loadedPlugins() const
 void Device::reloadPlugins()
 {
     QMap<QString, KdeConnectPlugin*> newPluginMap;
-    QMultiMap<QString, KdeConnectPlugin*> newPluginsByInterface;
+    QMultiMap<QString, KdeConnectPlugin*> newPluginsByIncomingInterface;
+    QMultiMap<QString, KdeConnectPlugin*> newPluginsByOutgoingInterface;
 
     if (isPaired() && isReachable()) { //Do not load any plugin for unpaired devices, nor useless loading them for unreachable devices
 
@@ -123,16 +127,37 @@ void Device::reloadPlugins()
 
             if (isPluginEnabled) {
                 KdeConnectPlugin* plugin = m_plugins.take(pluginName);
-                QStringList interfaces;
+                QStringList incomingInterfaces, outgoingInterfaces;
                 if (plugin) {
-                    interfaces = m_pluginsByinterface.keys(plugin);
+                    incomingInterfaces = m_pluginsByIncomingInterface.keys(plugin);
+                    outgoingInterfaces = m_pluginsByOutgoingInterface.keys(plugin);
                 } else {
-                    PluginData data = loader->instantiatePluginForDevice(pluginName, this);
-                    plugin = data.plugin;
-                    interfaces = data.interfaces;
+                    KService::Ptr service = loader->pluginService(pluginName);
+                    incomingInterfaces = service->property("X-KdeConnect-SupportedPackageType", QVariant::StringList).toStringList();
+                    outgoingInterfaces = service->property("X-KdeConnect-OutgoingPackageType", QVariant::StringList).toStringList();
                 }
-                foreach(const QString& interface, interfaces) {
-                    newPluginsByInterface.insert(interface, plugin);
+
+                //If we don't find intersection with the received on one end and the sent on the other, we don't
+                //let the plugin stay
+                //Also, if no capabilities are specified on the other end, we don't apply this optimizaton, as
+                //we asume that the other client doesn't know about capabilities.
+                if (!m_incomingCapabilities.isEmpty() && !m_outgoingCapabilities.isEmpty()
+                    && m_incomingCapabilities.intersect(outgoingInterfaces.toSet()).isEmpty()
+                    && m_outgoingCapabilities.intersect(incomingInterfaces.toSet()).isEmpty()
+                ) {
+                    delete plugin;
+                    continue;
+                }
+
+                if (!plugin) {
+                    plugin = loader->instantiatePluginForDevice(pluginName, this);
+                }
+
+                foreach(const QString& interface, incomingInterfaces) {
+                    newPluginsByIncomingInterface.insert(interface, plugin);
+                }
+                foreach(const QString& interface, outgoingInterfaces) {
+                    newPluginsByOutgoingInterface.insert(interface, plugin);
                 }
                 newPluginMap[pluginName] = plugin;
             }
@@ -143,7 +168,8 @@ void Device::reloadPlugins()
     //them anymore, otherwise they would have been moved to the newPluginMap)
     qDeleteAll(m_plugins);
     m_plugins = newPluginMap;
-    m_pluginsByinterface = newPluginsByInterface;
+    m_pluginsByIncomingInterface = newPluginsByIncomingInterface;
+    m_pluginsByOutgoingInterface = newPluginsByOutgoingInterface;
 
     Q_FOREACH(KdeConnectPlugin* plugin, m_plugins) {
         plugin->connected();
@@ -225,7 +251,7 @@ static bool lessThan(DeviceLink* p1, DeviceLink* p2)
 
 void Device::addLink(const NetworkPackage& identityPackage, DeviceLink* link)
 {
-    //kDebug(kdeconnect_kded()) << "Adding link to" << id() << "via" << link->provider();
+    //kDebug(debugArea()) << "Adding link to" << id() << "via" << link->provider();
 
     m_protocolVersion = identityPackage.get<int>("protocolVersion");
     if (m_protocolVersion != NetworkPackage::ProtocolVersion) {
@@ -272,7 +298,7 @@ void Device::removeLink(DeviceLink* link)
 {
     m_deviceLinks.removeOne(link);
 
-    //kDebug(kdeconnect_kded()) << "RemoveLink" << m_deviceLinks.size() << "links remaining";
+    //kDebug(debugArea()) << "RemoveLink" << m_deviceLinks.size() << "links remaining";
 
     if (m_deviceLinks.isEmpty()) {
         reloadPlugins();
@@ -305,12 +331,12 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 {
     if (np.type() == PACKAGE_TYPE_PAIR) {
 
-        //kDebug(kdeconnect_kded()) << "Pair package";
+        //kDebug(debugArea()) << "Pair package";
 
         bool wantsPair = np.get<bool>("pair");
 
         if (wantsPair == isPaired()) {
-            kDebug(kdeconnect_kded()) << "Already" << (wantsPair? "paired":"unpaired");
+            kDebug(debugArea()) << "Already" << (wantsPair? "paired":"unpaired");
             if (m_pairStatus == Device::Requested) {
                 m_pairStatus = Device::NotPaired;
                 m_pairingTimeut.stop();
@@ -325,7 +351,7 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
             const QString& key = np.get<QString>("publicKey");
             m_publicKey = QCA::RSAPublicKey::fromPEM(key);
             if (m_publicKey.isNull()) {
-                kDebug(kdeconnect_kded()) << "ERROR decoding key";
+                kDebug(debugArea()) << "ERROR decoding key";
                 if (m_pairStatus == Device::Requested) {
                     m_pairStatus = Device::NotPaired;
                     m_pairingTimeut.stop();
@@ -336,12 +362,12 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 
             if (m_pairStatus == Device::Requested)  { //We started pairing
 
-                kDebug(kdeconnect_kded()) << "Pair answer";
+                kDebug(debugArea()) << "Pair answer";
                 setAsPaired();
 
             } else {
 
-                kDebug(kdeconnect_kded()) << "Pair request";
+                kDebug(debugArea()) << "Pair request";
 
                 KNotification* notification = new KNotification("pingReceived"); //KNotification::Persistent
                 notification->setPixmap(KIcon("dialog-information").pixmap(48, 48));
@@ -359,7 +385,7 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 
         } else {
 
-            kDebug(kdeconnect_kded()) << "Unpair request";
+            kDebug(debugArea()) << "Unpair request";
 
             PairStatus prevPairStatus = m_pairStatus;
             m_pairStatus = Device::NotPaired;
@@ -377,12 +403,12 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
         }
 
     } else if (isPaired()) {
-        QList<KdeConnectPlugin*> plugins = m_pluginsByinterface.values(np.type());
+        QList<KdeConnectPlugin*> plugins = m_pluginsByIncomingInterface.values(np.type());
         foreach(KdeConnectPlugin* plugin, plugins) {
             plugin->receivePackage(np);
         }
     } else {
-        kDebug(kdeconnect_kded()) << "device" << name() << "not paired, ignoring package" << np.type();
+        kDebug(debugArea()) << "device" << name() << "not paired, ignoring package" << np.type();
         unpair();
 
     }
@@ -400,7 +426,7 @@ bool Device::sendOwnPublicKey()
 
 void Device::rejectPairing()
 {
-    kDebug(kdeconnect_kded()) << "Rejected pairing";
+    kDebug(debugArea()) << "Rejected pairing";
 
     m_pairStatus = Device::NotPaired;
 
@@ -416,7 +442,7 @@ void Device::acceptPairing()
 {
     if (m_pairStatus != Device::RequestedByPeer) return;
 
-    kDebug(kdeconnect_kded()) << "Accepted pairing";
+    kDebug(debugArea()) << "Accepted pairing";
 
     bool success = sendOwnPublicKey();
 
@@ -462,13 +488,6 @@ QStringList Device::availableLinks() const
     return sl;
 }
 
-void Device::sendPing()
-{
-    NetworkPackage np(PACKAGE_TYPE_PING);
-    bool success = sendPackage(np);
-    kDebug(kdeconnect_kded()) << "sendPing:" << success;
-}
-
 Device::DeviceType Device::str2type(QString deviceType) {
     if (deviceType == "desktop") return Desktop;
     if (deviceType == "laptop") return Laptop;
@@ -483,4 +502,21 @@ QString Device::type2str(Device::DeviceType deviceType) {
     if (deviceType == Phone) return "phone";
     if (deviceType == Tablet) return "tablet";
     return "unknown";
+}
+
+QString Device::iconName() const
+{
+    switch(m_deviceType) {
+        case Device::Desktop:
+            return "computer";
+        case Device::Laptop:
+            return "computer-laptop";
+        case Device::Phone:
+            return "smartphone";
+        case Device::Tablet:
+            return "tablet";
+        case Device::Unknown:
+            return "unknown";
+    }
+    return QString();
 }

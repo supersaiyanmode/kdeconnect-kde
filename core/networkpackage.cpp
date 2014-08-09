@@ -33,6 +33,7 @@
 #include <qjson/qobjecthelper.h>
 
 #include "filetransferjob.h"
+#include "pluginloader.h"
 
 const QCA::EncryptionAlgorithm NetworkPackage::EncryptionAlgorithm = QCA::EME_PKCS1v15;
 const int NetworkPackage::ProtocolVersion = 5;
@@ -55,9 +56,11 @@ void NetworkPackage::createIdentityPackage(NetworkPackage* np)
     np->mPayload = QSharedPointer<QIODevice>();
     np->mPayloadSize = 0;
     np->set("deviceId", id);
-    np->set("deviceName", QHostInfo::localHostName());
+    np->set("deviceName", qgetenv("USER") + "@" + QHostInfo::localHostName());
     np->set("protocolType", "desktop"); //TODO: Detect laptop, tablet, phone...
     np->set("protocolVersion",  NetworkPackage::ProtocolVersion);
+    np->set("SupportedIncomingInterfaces", PluginLoader::instance()->incomingInterfaces().join(","));
+    np->set("SupportedOutgoingInterfaces", PluginLoader::instance()->outgoingInterfaces().join(","));
 
     //kDebug(kdeconnect_kded()) << "createIdentityPackage" << np->serialize();
 }
@@ -82,10 +85,10 @@ QByteArray NetworkPackage::serialize() const
     QJson::Serializer serializer;
     QByteArray json = serializer.serialize(variant,&ok);
     if (!ok) {
-        kDebug(kdeconnect_kded()) << "Serialization error:" << serializer.errorMessage();
+        kDebug(debugArea()) << "Serialization error:" << serializer.errorMessage();
     } else {
         if (!isEncrypted()) {
-            //kDebug(kdeconnect_kded()) << "Serialized package:" << json;
+            //kDebug(kDebugArea) << "Serialized package:" << json;
         }
         json.append('\n');
     }
@@ -100,7 +103,7 @@ bool NetworkPackage::unserialize(const QByteArray& a, NetworkPackage* np)
     bool ok;
     QVariantMap variant = parser.parse(a, &ok).toMap();
     if (!ok) {
-        kDebug(kdeconnect_kded()) << "Unserialization error:" << a;
+        kDebug(debugArea()) << "Unserialization error:" << a;
         return false;
     }
 
@@ -108,7 +111,7 @@ bool NetworkPackage::unserialize(const QByteArray& a, NetworkPackage* np)
     QJson::QObjectHelper::qvariant2qobject(variant, np);
 
     if (!np->isEncrypted()) {
-        //kDebug(kdeconnect_kded()) << "Unserialized: " << a;
+        //kDebug(kDebugArea) << "Unserialized: " << a;
     }
 
     np->mPayloadSize = variant["payloadSize"].toInt(); //Will return 0 if was not present, which is ok

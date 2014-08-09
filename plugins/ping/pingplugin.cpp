@@ -26,19 +26,20 @@
 
 #include <core/kdebugnamespace.h>
 #include <core/device.h>
+#include <QDBusConnection>
 
 K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< PingPlugin >(); )
-K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_ping", "kdeconnect-kded") )
+K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_ping", "kdeconnect-plugins") )
 
 PingPlugin::PingPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
-    //kDebug(kdeconnect_kded()) << "Ping plugin constructor for device" << device()->name();
+    //kDebug(debugArea()) << "Ping plugin constructor for device" << device()->name();
 }
 
 PingPlugin::~PingPlugin()
 {
-    //kDebug(kdeconnect_kded()) << "Ping plugin destructor for device" << device()->name();
+    //kDebug(debugArea()) << "Ping plugin destructor for device" << device()->name();
 }
 
 bool PingPlugin::receivePackage(const NetworkPackage& np)
@@ -52,4 +53,21 @@ bool PingPlugin::receivePackage(const NetworkPackage& np)
 
     return true;
 
+}
+
+void PingPlugin::sendPing()
+{
+    NetworkPackage np(PACKAGE_TYPE_PING);
+    bool success = sendPackage(np);
+    kDebug(debugArea()) << "sendPing:" << success;
+}
+
+void PingPlugin::connected()
+{
+    QDBusConnection::sessionBus().registerObject(dbusPath(), this, QDBusConnection::ExportAllContents);
+}
+
+QString PingPlugin::dbusPath() const
+{
+    return "/modules/kdeconnect/devices/" + device()->id() + "/ping";
 }

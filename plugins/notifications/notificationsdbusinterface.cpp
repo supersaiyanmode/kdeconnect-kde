@@ -26,17 +26,22 @@
 #include <KIcon>
 #include <KMD5>
 
+#include <core/device.h>
+#include <core/kdeconnectplugin.h>
 #include <core/kdebugnamespace.h>
 #include <core/filetransferjob.h>
+
 #include "notificationsplugin.h"
 
-NotificationsDbusInterface::NotificationsDbusInterface(Device* device, QObject *parent)
-    : QDBusAbstractAdaptor(parent)
-    , mDevice(device)
+NotificationsDbusInterface::NotificationsDbusInterface(KdeConnectPlugin* plugin)
+    : QDBusAbstractAdaptor(const_cast<Device*>(plugin->device()))
+    , mDevice(plugin->device())
+    , mPlugin(plugin)
     , mLastId(0)
     , imagesDir(QDir::temp().absoluteFilePath("kdeconnect"))
 {
     imagesDir.mkpath(imagesDir.absolutePath());
+
 }
 
 NotificationsDbusInterface::~NotificationsDbusInterface()
@@ -106,10 +111,10 @@ void NotificationsDbusInterface::addNotification(Notification* noti)
 
 void NotificationsDbusInterface::removeNotification(const QString& internalId)
 {
-    kDebug(kdeconnect_kded()) << "removeNotification" << internalId;
+    kDebug(debugArea()) << "removeNotification" << internalId;
 
     if (!mInternalIdToPublicId.contains(internalId)) {
-        kDebug(kdeconnect_kded()) << "Not found";
+        kDebug(debugArea()) << "Not found";
         return;
     }
 
@@ -117,7 +122,7 @@ void NotificationsDbusInterface::removeNotification(const QString& internalId)
 
     Notification* noti = mNotifications.take(publicId);
     if (!noti) {
-        kDebug(kdeconnect_kded()) << "Not found";
+        kDebug(debugArea()) << "Not found";
         return;
     }
 
@@ -134,10 +139,13 @@ void NotificationsDbusInterface::dismissRequested(Notification* notification)
 
     NetworkPackage np(PACKAGE_TYPE_NOTIFICATION);
     np.set<QString>("cancel", internalId);
-    mDevice->sendPackage(np);
+    mPlugin->sendPackage(np);
 
-    //This should be called automatically back from server
-    //removeNotification(internalId);
+    //Workaround: we erase notifications without waiting a repsonse from the
+    //phone because we won't receive a response if we are out of sync and this
+    //notification no longer exists. Ideally, each time we reach the phone
+    //after some time disconnected we should re-sync all the notifications.
+    removeNotification(internalId);
 }
 
 QString NotificationsDbusInterface::newId()

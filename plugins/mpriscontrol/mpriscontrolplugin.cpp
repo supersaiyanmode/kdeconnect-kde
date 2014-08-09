@@ -34,7 +34,7 @@
 #include "propertiesdbusinterface.h"
 
 K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< MprisControlPlugin >(); )
-K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_mpriscontrol", "kdeconnect-kded") )
+K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_mpriscontrol", "kdeconnect-plugins") )
 
 MprisControlPlugin::MprisControlPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
@@ -62,7 +62,7 @@ void MprisControlPlugin::serviceOwnerChanged(const QString &name,
 
     if (name.startsWith("org.mpris.MediaPlayer2")) {
 
-        kDebug(kdeconnect_kded()) << "Mpris (un)registered in bus" << name << oldOwner << newOwner;
+        kDebug(debugArea()) << "Mpris (un)registered in bus" << name << oldOwner << newOwner;
 
         if (oldOwner.isEmpty()) {
             addPlayer(name);
@@ -78,7 +78,7 @@ void MprisControlPlugin::addPlayer(const QString& service)
     //FIXME: This call hangs and returns an empty string if KDED is still starting!
     const QString identity = mprisInterface.property("Identity").toString();
     playerList[identity] = service;
-    kDebug(kdeconnect_kded()) << "Mpris addPlayer" << service << "->" << identity;
+    kDebug(debugArea()) << "Mpris addPlayer" << service << "->" << identity;
     sendPlayerList();
 
     OrgFreedesktopDBusPropertiesInterface* freedesktopInterface = new OrgFreedesktopDBusPropertiesInterface(service, "/org/mpris/MediaPlayer2", QDBusConnection::sessionBus(), this);
@@ -125,14 +125,14 @@ void MprisControlPlugin::propertiesChanged(const QString& propertyInterface, con
         const QString& service = interface->service();
         const QString& player = playerList.key(service);
         np.set("player", player);
-        device()->sendPackage(np);
+        sendPackage(np);
     }
 }
 
 void MprisControlPlugin::removePlayer(const QString& ifaceName)
 {
     const QString identity = playerList.key(ifaceName);
-    kDebug(kdeconnect_kded()) << "Mpris removePlayer" << ifaceName << "->" << identity;
+    kDebug(debugArea()) << "Mpris removePlayer" << ifaceName << "->" << identity;
     playerList.remove(identity);
     sendPlayerList();
 }
@@ -157,18 +157,18 @@ bool MprisControlPlugin::receivePackage (const NetworkPackage& np)
     OrgMprisMediaPlayer2PlayerInterface mprisInterface(playerList[player], "/org/mpris/MediaPlayer2", QDBusConnection::sessionBus());
     if (np.has("action")) {
         const QString& action = np.get<QString>("action");
-        kDebug(kdeconnect_kded()) << "Calling action" << action << "in" << playerList[player];
+        kDebug(debugArea()) << "Calling action" << action << "in" << playerList[player];
         //TODO: Check for valid actions
         mprisInterface.call(action);
     }
     if (np.has("setVolume")) {
         double volume = np.get<int>("setVolume")/100.f;
-        kDebug(kdeconnect_kded()) << "Setting volume" << volume << "to" << playerList[player];
+        kDebug(debugArea()) << "Setting volume" << volume << "to" << playerList[player];
         mprisInterface.setVolume(volume);
     }
     if (np.has("Seek")) {
         int offset = np.get<int>("Seek");
-        kDebug(kdeconnect_kded()) << "Seeking" << offset << "to" << playerList[player];
+        kDebug(debugArea()) << "Seeking" << offset << "to" << playerList[player];
         mprisInterface.Seek(offset);
     }
 
@@ -185,33 +185,27 @@ bool MprisControlPlugin::receivePackage (const NetworkPackage& np)
 
         answer.set("nowPlaying",nowPlaying);
 
-
-
         bool playing = (mprisInterface.playbackStatus() == QLatin1String("Playing"));
         answer.set("isPlaying", playing);
 
         somethingToSend = true;
-
-
     }
     if (np.get<bool>("requestVolume")) {
         int volume = (int)(mprisInterface.volume() * 100);
         answer.set("volume",volume);
         somethingToSend = true;
-
     }
     if (somethingToSend) {
         answer.set("player", player);
-        device()->sendPackage(answer);
+        sendPackage(answer);
     }
 
     return true;
-
 }
 
 void MprisControlPlugin::sendPlayerList()
 {
     NetworkPackage np(PACKAGE_TYPE_MPRIS);
     np.set("playerList",playerList.keys());
-    device()->sendPackage(np);
+    sendPackage(np);
 }

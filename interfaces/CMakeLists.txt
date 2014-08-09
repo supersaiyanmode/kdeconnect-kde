@@ -15,7 +15,6 @@ set(libkdeconnect_SRC
     devicesmodel.cpp
     notificationsmodel.cpp
     modeltest.cpp
-    kdebugnamespace.cpp
 )
 
 set(libkdeconnect_public_HEADERS
@@ -70,9 +69,11 @@ add_dependencies(kdeconnectinterfaces
 )
 
 target_link_libraries(kdeconnectinterfaces
-    ${KDE4_KDEUI_LIBS}
+LINK_PUBLIC
     ${QT_QTCORE_LIBRARY}
     ${QT_QTDBUS_LIBRARY}
+LINK_PRIVATE
+    ${KDE4_KDEUI_LIBS}
     ${KDE4_KDECORE_LIBS}
     ${QJSON_LIBRARIES}
 )

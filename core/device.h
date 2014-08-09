@@ -38,7 +38,8 @@ class KDECONNECTCORE_EXPORT Device
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device")
-    Q_PROPERTY(QString id READ id)
+    Q_PROPERTY(QString id READ id CONSTANT)
+    Q_PROPERTY(QString iconName READ iconName CONSTANT)
     Q_PROPERTY(QString name READ name)
 
     enum PairStatus {
@@ -78,6 +79,7 @@ public:
     QString id() const { return m_deviceId; }
     QString name() const { return m_deviceName; }
     QString dbusPath() const { return "/modules/kdeconnect/devices/"+id(); }
+    QString iconName() const;
 
     //Add and remove links
     void addLink(const NetworkPackage& identityPackage, DeviceLink*);
@@ -103,7 +105,6 @@ public Q_SLOTS:
     Q_SCRIPTABLE void requestPair();
     Q_SCRIPTABLE void unpair();
     Q_SCRIPTABLE void reloadPlugins(); //From kconf
-    Q_SCRIPTABLE void sendPing();
     void acceptPairing();
     void rejectPairing();
 
@@ -130,13 +131,17 @@ private:
 
     QList<DeviceLink*> m_deviceLinks;
     QMap<QString, KdeConnectPlugin*> m_plugins;
-    QMultiMap<QString, KdeConnectPlugin*> m_pluginsByinterface;
+    QMultiMap<QString, KdeConnectPlugin*> m_pluginsByIncomingInterface;
+    QMultiMap<QString, KdeConnectPlugin*> m_pluginsByOutgoingInterface;
 
     QTimer m_pairingTimeut;
+    QSet<QString> m_incomingCapabilities;
+    QSet<QString> m_outgoingCapabilities;
 
     void setAsPaired();
     void storeAsTrusted();
     bool sendOwnPublicKey();
+    void initPrivateKey();
 
 };
 

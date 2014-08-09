@@ -28,11 +28,11 @@
 #include "batterydbusinterface.h"
 
 K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< BatteryPlugin >(); )
-K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_battery", "kdeconnect-kded") )
+K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_battery", "kdeconnect-plugins") )
 
 BatteryPlugin::BatteryPlugin(QObject *parent, const QVariantList &args)
     : KdeConnectPlugin(parent, args)
-    , batteryDbusInterface(new BatteryDbusInterface(parent))
+    , batteryDbusInterface(new BatteryDbusInterface(device()))
 {
 
     //TODO: Add battery reporting, could be based on:
@@ -44,7 +44,7 @@ void BatteryPlugin::connected()
 {
     NetworkPackage np(PACKAGE_TYPE_BATTERY);
     np.set("request",true);
-    device()->sendPackage(np);
+    sendPackage(np);
 }
 
 BatteryPlugin::~BatteryPlugin()
