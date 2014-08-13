@@ -125,14 +125,13 @@ int ContactPlugin::setupResource()
         resID=job->instance().identifier();
         config->group("trusted_devices").group(device()->id()).writeEntry("contacts_resource_id",resID);
         config->sync();
-        QDBusMessage msg = QDBusMessage::createMethodCall("org.freedesktop.Akonadi.Agent."+resID, "/Settings", "org.kde.Akonadi.ICalDirectory.Settings", "setPath");
+        QDBusMessage msg = QDBusMessage::createMethodCall("org.freedesktop.Akonadi.Agent."+resID, "/Settings", "org.kde.Akonadi.Contacts.Settings", "setPath");
         QList<QVariant> args;
         args.append("kdeconnect_contact/"+device()->id());
         msg.setArguments(args);
         bool queued= QDBusConnection::sessionBus().send(msg);
         job->instance().synchronize();
     }
-    //wait a bit then fetch collection
     Akonadi::CollectionFetchJob *job = new Akonadi::CollectionFetchJob(Akonadi::Collection::root(),
             Akonadi::CollectionFetchJob::Recursive,
             this);
@@ -156,7 +155,7 @@ void ContactPlugin::collectionFetchResult(KJob* job)
         kDebug(debugArea())<<"collection fetch failed";
     }
     mCollection.setName(device()->name());
-    Akonadi::CollectionModifyJob *job2 = new Akonadi::CollectionModifyJob( mCollection );
+    Akonadi::CollectionModifyJob *job2 = new Akonadi::CollectionModifyJob( mCollection , this);
     job2->exec();
     mCollection=job2->collection();
     kDebug(debugArea())<<mCollection;
@@ -188,7 +187,7 @@ void  ContactPlugin::deleteContact(QString& uid)
     if (mItemMap.contains(uid))
     {
         Akonadi::Item item=mItemMap[uid];
-        Akonadi::ItemDeleteJob* job=new Akonadi::ItemDeleteJob(item);
+        Akonadi::ItemDeleteJob* job=new Akonadi::ItemDeleteJob(item , this);
         connect( job, SIGNAL( result( KJob* ) ), SLOT( contactRemoveResult( KJob* ) ) );
     }
 }

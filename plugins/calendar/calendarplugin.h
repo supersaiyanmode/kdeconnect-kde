@@ -25,8 +25,7 @@
 
 #include <core/kdeconnectplugin.h>
 #include <Akonadi/Calendar/ETMCalendar>
-#include <Akonadi/Collection>
-#include <KCalCore/Incidence>
+#include <KCalCore/ICalFormat>
 
 #define PACKAGE_TYPE_CALENDAR QLatin1String("kdeconnect.calendar")
 
@@ -36,30 +35,17 @@ class KDE_EXPORT CalendarPlugin
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.calendar")
 private:
-    typedef struct incidencInfo
-    {
-        QString uid;
-        QString summary;
-        QList<KDateTime> s_date;
-        QList<KDateTime> e_date;
-    }IncidenceInfo;
-	Akonadi::ETMCalendar mCalendar;
+	bool isProcessing;
+    bool shouldSend;
+    Akonadi::ETMCalendar mCalendar;
     Akonadi::Collection mCollection;
-    QList<IncidenceInfo> mSentInfoList;
     QString mResourceId;
-    KCalCore::Incidence::Ptr itemToIncidence(const Akonadi::Item &item);
-    IncidenceInfo  incidenceToInfo(KCalCore::Incidence::Ptr& incidence);
-    bool incidenceIsIden(KCalCore::Incidence::Ptr& incidence1,KCalCore::Incidence::Ptr& incidence2);
-    bool incidenceIsIden(IncidenceInfo info1,IncidenceInfo info2);
+    KCalCore::ICalFormat conventor;
+    QMap<QString,KCalCore::Event::Ptr> mSentEvent;
+    KCalCore::Event::Ptr itemToEvent(const Akonadi::Item &item);
 
     int setupResource();
-    bool calendarDidChanged();
     void sendCalendar();
-    void addIncidence(KCalCore::Incidence::Ptr& incidence);
-    void modifyIncidence(KCalCore::Incidence::Ptr& incidence);
-    void deleteIncidence(KCalCore::Incidence::Ptr& incidence);
-    void deleteIncidence(QString& uid);
-    void mergeIncidence(KCalCore::Incidence::Ptr& incidence);
     KCalCore::Incidence::Ptr parseICal(QString& iCal);
 
 public:
@@ -74,6 +60,7 @@ private slots:
     void delayedRequest();
     void calendarChanged();
     void collectionFetchResult(KJob*);
+    
     void createFinished(bool success, const QString &errorMessage);
     void deleteFinished(bool success, const QString &errorMessage);
     void modifyFinished(bool success, const QString &errorMessage);

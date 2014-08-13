@@ -25,7 +25,8 @@
 
 #include <core/kdeconnectplugin.h>
 #include <Akonadi/Calendar/ETMCalendar>
-
+#include <KCalCore/ICalFormat>
+ 
 #define PACKAGE_TYPE_REMINDER QLatin1String("kdeconnect.reminder")
 
 class KDE_EXPORT ReminderPlugin
@@ -34,30 +35,17 @@ class KDE_EXPORT ReminderPlugin
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.reminder")
 private:
-    typedef struct incidencInfo
-    {
-        QString uid;
-        QString summary;
-        QList<KDateTime> s_date;
-        QList<KDateTime> e_date;
-    }IncidenceInfo;
+    bool isProcessing;
+    bool shouldSend;
 	Akonadi::ETMCalendar mCalendar;
     Akonadi::Collection mCollection;
-    QList<IncidenceInfo> mSentInfoList;
     QString mResourceId;
-    KCalCore::Incidence::Ptr itemToIncidence(const Akonadi::Item &item);
-    IncidenceInfo  incidenceToInfo(KCalCore::Incidence::Ptr& incidence);
-    bool incidenceIsIden(KCalCore::Incidence::Ptr& incidence1,KCalCore::Incidence::Ptr& incidence2);
-    bool incidenceIsIden(IncidenceInfo info1,IncidenceInfo info2);
+    KCalCore::ICalFormat conventor;
+    QMap<QString,KCalCore::Todo::Ptr> mSentTodo;
+    KCalCore::Todo::Ptr itemToTodo(const Akonadi::Item &item);
 
     int setupResource();
-    bool calendarDidChanged();
     void sendCalendar();
-    void addIncidence(KCalCore::Incidence::Ptr& incidence);
-    void modifyIncidence(KCalCore::Incidence::Ptr& incidence);
-    void deleteIncidence(KCalCore::Incidence::Ptr& incidence);
-    void deleteIncidence(QString& uid);
-    void mergeIncidence(KCalCore::Incidence::Ptr& incidence);
     KCalCore::Incidence::Ptr parseICal(QString& iCal);
 
 public:

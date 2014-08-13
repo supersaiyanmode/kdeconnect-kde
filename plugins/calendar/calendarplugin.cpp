@@ -26,11 +26,9 @@
 #include <Akonadi/Calendar/IncidenceChanger>
 #include <Akonadi/CollectionFetchJob>
 #include <Akonadi/CollectionFetchScope>
-#include <Akonadi/KCal/IncidenceMimeTypeVisitor>
 #include <Akonadi/Collection>
 #include <Akonadi/Control>
 #include <KCalCore/Incidence>
-#include <KCalCore/ICalFormat>
 #include <KSharedConfig>
 #include <KConfigGroup>
 #include <QDBusConnection>
@@ -40,7 +38,7 @@ K_PLUGIN_FACTORY( KdeConnectPluginFactory, registerPlugin< CalendarPlugin >(); )
 K_EXPORT_PLUGIN( KdeConnectPluginFactory("kdeconnect_calendar", "kdeconnect-plugins") )
 
 CalendarPlugin::CalendarPlugin(QObject* parent, const QVariantList& args)
-    : KdeConnectPlugin(parent, args),mCalendar(QStringList()<<KCalCore::Event::eventMimeType())
+    : KdeConnectPlugin(parent, args),mCalendar(QStringList()<<KCalCore::Event::eventMimeType()),isProcessing(false),shouldSend(false),mSentEvent()
 {
     if ( !Akonadi::Control::start() ) {
            kDebug(debugArea()) <<"Akonadi failed to start";
@@ -60,20 +58,46 @@ CalendarPlugin::~CalendarPlugin()
 
 bool CalendarPlugin::receivePackage(const NetworkPackage& np)
 {   
-	kDebug(debugArea()) << "Calendar plugin received an package from device" << device()->name();
 	QString iCal=np.get<QString>("iCal");
     QString op=np.get<QString>("op");
+    QString uid=np.get<QString>("uid");
+    QString status=np.get<QString>("status");
     if (np.has("request")){
+        shouldSend=true;
         sendCalendar();
     }
-    if (op=="delete")
-    {
-        QString uid=np.get<QString>("uid");
-        deleteIncidence(uid);
+    if (op=="delete"){
+        KCalCore::Event::Ptr oldEvent=mCalendar.event(uid);
+        mCalendar.deleteEvent(oldEvent);
     }
     else if (op=="merge"){
+        if (status == "begin"){
+            isProcessing=true;
+            return true;
+        }
+        else if (status=="end"){
+            isProcessing=false;
+            sendCalendar();
+            return true;
+        }
+        else if (status=="process"){
+            isProcessing=true;
+        }
+        KCalCore::Event::Ptr oldEvent=mCalendar.event(uid);
         KCalCore::Incidence::Ptr incidence=parseICal(iCal);
-        mergeIncidence(incidence);
+        KCalCore::Event::Ptr newEvent=incidence.staticCast<KCalCore::Event>();
+        
+        if (oldEvent.isNull()){
+            mCalendar.addEvent(newEvent);
+            shouldSend=true;
+        }
+        else{
+            if (*oldEvent!=*newEvent && oldEvent->lastModified()< newEvent->lastModified()){
+                mCalendar.modifyIncidence(newEvent);
+                shouldSend=true;
+            }
+        }
+        
     }
     return true;
 }
@@ -85,12 +109,9 @@ void CalendarPlugin::connected()
 
 void CalendarPlugin::delayedRequest()
 {
-    if (mCalendar.items().count()==0)
-    {   
-        NetworkPackage np(PACKAGE_TYPE_CALENDAR);
-        np.set("request",true);
-        sendPackage(np);
-    }
+    NetworkPackage np(PACKAGE_TYPE_CALENDAR);
+    np.set("request",true);
+    sendPackage(np);
 }
 
 int CalendarPlugin::setupResource()
@@ -101,14 +122,13 @@ int CalendarPlugin::setupResource()
     mResourceId= data.readEntry<QString>("ical_resource_id", QLatin1String(""));
     if (mResourceId!="")
     {
-        kDebug(debugArea())<<" res id in config file"<<mResourceId;
         Akonadi::AgentInstance mAgentInstance=Akonadi::AgentManager::self()->instance(mResourceId);
         if (!mAgentInstance.isValid()){
             mResourceId="";
-            kDebug(debugArea())<<"instance non valid";
         }
     }
 
+    //create new resource instance
     if (mResourceId=="")
     {
         Akonadi::AgentInstanceCreateJob *job = new Akonadi::AgentInstanceCreateJob( "akonadi_icaldir_resource", this );
@@ -127,14 +147,13 @@ int CalendarPlugin::setupResource()
         bool queued= QDBusConnection::sessionBus().send(msg);
         job->instance().synchronize();
     }
-    //wait a bit then fetch collection
+
     mCalendar.setCollectionFilteringEnabled(false);
     Akonadi::CollectionFetchJob *job = new Akonadi::CollectionFetchJob(Akonadi::Collection::root(),
             Akonadi::CollectionFetchJob::Recursive,
             this);
     job->fetchScope().setContentMimeTypes(QStringList() <<  KCalCore::Event::eventMimeType());
     job->setResource(mResourceId);
-    job->startTimer(100);
     connect(job, SIGNAL(result(KJob*)), SLOT(collectionFetchResult(KJob*)));
     return 0;
 }
@@ -142,16 +161,12 @@ int CalendarPlugin::setupResource()
 void CalendarPlugin::collectionFetchResult(KJob* job)
 {
     Akonadi::CollectionFetchJob *fetchJob = static_cast<Akonadi::CollectionFetchJob*>( job );
-    if (fetchJob->collections().count()==0){
-        kDebug(debugArea())<<"no collection";
-    }else{
-        kDebug(debugArea())<<"got the collection";
+    if (fetchJob->collections().count()!=0 ){
         mCollection=fetchJob->collections().first();
     }
     
-    if (mCollection.isValid()){
+    if (!mCollection.isValid()){
         kDebug(debugArea())<<"collection fetch failed";
-        kDebug(debugArea())<<mCollection;
     }
     
     mCalendar.incidenceChanger()->setDefaultCollection(mCollection);
@@ -160,178 +175,62 @@ void CalendarPlugin::collectionFetchResult(KJob* job)
 
 void CalendarPlugin::sendCalendar()
 {
-    if(!calendarDidChanged())
+    if (!shouldSend || isProcessing)
         return;
-    //renew incidence list
-    Akonadi::Item::List newItemList=mCalendar.items(mCollection.id());
-    mSentInfoList.clear();
-    foreach(Akonadi::Item item, newItemList)
-    {
-        KCalCore::Incidence::Ptr incidence=itemToIncidence(item);
-        mSentInfoList.append(incidenceToInfo(incidence));
-    }
 
-    //send calendar
-    KCalCore::ICalFormat ical;
+    NetworkPackage np(PACKAGE_TYPE_CALENDAR);
+    np.set("status","begin");
+    np.set("op","merge");
+    sendPackage(np);
     foreach(Akonadi::Item item,mCalendar.items(mCollection.id()))
     {
-        KCalCore::Incidence::Ptr incidence=itemToIncidence(item);
-        QList<KDateTime> datelist=incidence->startDateTimesForDate(QDate::currentDate(),KDateTime::LocalZone);
-        datelist+=incidence->startDateTimesForDate(QDate::currentDate().addDays(1),KDateTime::LocalZone);
+        KCalCore::Event::Ptr incidence=itemToEvent(item);
+        QList<KDateTime> datelist;
+        for (int i = 0; i < 7; ++i){
+            datelist+=incidence->startDateTimesForDate(QDate::currentDate().addDays(i),KDateTime::LocalZone);
+        }
         if (datelist.length()==0){
             continue;
         }
-        if (datelist.last()<KDateTime::currentDateTime(KDateTime::LocalZone)){
-            continue;
+        QString uid=incidence->uid();
+        KCalCore::Event::Ptr sent=mSentEvent[uid];
+        if (sent.isNull() || (*incidence!=*sent) ){
+            QString str=conventor.toICalString(incidence);
+            kDebug(debugArea()) << "send event :\n" <<str;
+            NetworkPackage np(PACKAGE_TYPE_CALENDAR);
+            np.set("iCal",str);
+            np.set("op","merge");
+            sendPackage(np);
+            mSentEvent[uid]=incidence;
         }
-        QString str=ical.toICalString(incidence);
-        kDebug(debugArea()) << "send calendar :\n" <<str;
-        NetworkPackage np(PACKAGE_TYPE_CALENDAR);
-        np.set("iCal",str);
-        np.set("op","merge");
-        sendPackage(np);
     }
+    NetworkPackage np2(PACKAGE_TYPE_CALENDAR);
+    np2.set("status","end");
+    np2.set("op","merge");
+    sendPackage(np2);
+    shouldSend=false;
 }
 
-bool CalendarPlugin::incidenceIsIden(CalendarPlugin::IncidenceInfo info1,CalendarPlugin::IncidenceInfo info2)
-{
-    if ( info1.uid!=info2.uid ||
-        info1.summary!=info2.summary ||
-        info1.s_date !=info2.s_date ||
-        info1.e_date !=info2.e_date )
-    {
-        return false;
-    }
-    return true;
-}
-
-bool CalendarPlugin::incidenceIsIden(KCalCore::Incidence::Ptr& incidence1,KCalCore::Incidence::Ptr& incidence2)
-{
-    IncidenceInfo info1=incidenceToInfo(incidence1);
-    IncidenceInfo info2=incidenceToInfo(incidence2);
-    return incidenceIsIden(info1,info2);
-}
-
-KCalCore::Incidence::Ptr CalendarPlugin::itemToIncidence(const Akonadi::Item &item)
+KCalCore::Event::Ptr CalendarPlugin::itemToEvent(const Akonadi::Item &item)
 {
     if(item.hasPayload()){
-        return item.payload<KCalCore::Incidence::Ptr>();
-    }
-    else{
-        return KCalCore::Incidence::Ptr();
-    }
-}
-
-void CalendarPlugin::addIncidence(KCalCore::Incidence::Ptr& incidence)
-{
-    kDebug(debugArea())<<"add incidence"<<incidence->uid();
-    mCalendar.addIncidence(incidence);
-}
-
-void CalendarPlugin::modifyIncidence(KCalCore::Incidence::Ptr& incidence)
-{
-    kDebug(debugArea())<<"modify incidence"<<incidence->uid();
-    mCalendar.modifyIncidence(incidence);
-}
-
-void CalendarPlugin::deleteIncidence(KCalCore::Incidence::Ptr& incidence)
-{
-    kDebug(debugArea())<<"delete incidence"<<incidence->uid();
-    mCalendar.deleteIncidence(incidence);
-}
-
-void CalendarPlugin::deleteIncidence(QString& uid)
-{
-    kDebug(debugArea())<<"delete incidence"<<uid;
-    Akonadi::Item item=mCalendar.item(uid);
-    if (item.isValid())
-    {
-        kDebug(debugArea())<<"item valid "<<uid;
-        KCalCore::Incidence::Ptr incidence=itemToIncidence(item);
-        deleteIncidence(incidence);
-    }
-    else{
-        kDebug(debugArea())<<"item invalid "<<uid;
-    }
-}
-
-void CalendarPlugin::mergeIncidence(KCalCore::Incidence::Ptr& incidence)
-{
-    kDebug(debugArea())<<"merge incidence"<<incidence->summary();
-    //FIXME it's dangerous when receive two same incidence to add at the same time
-    // a duplicate will occur
-    Akonadi::Item item=mCalendar.item(incidence->uid());
-    if (item.isValid()){
-        KCalCore::Incidence::Ptr oldInc=itemToIncidence(item);
-        if (!incidenceIsIden(incidence,oldInc)){
-                modifyIncidence(incidence);
-        }
-        else{
-            kDebug(debugArea())<<"nothing changed with incidence"<<incidence->summary();
+        KCalCore::Incidence::Ptr inc=item.payload<KCalCore::Incidence::Ptr>();
+        if (inc->mimeType()==KCalCore::Event::eventMimeType()){
+            return inc.staticCast<KCalCore::Event>();
         }
     }
-    else{
-        addIncidence(incidence);
-    }
-}
-
-bool CalendarPlugin::calendarDidChanged()
-{
-    Akonadi::Item::List newItemList=mCalendar.items(mCollection.id());
-    if (newItemList.length()!=mSentInfoList.length()){
-        kDebug(debugArea()) << "length not match";
-        return true;
-    }
-    for (int i = 0; i < newItemList.length(); ++i){
-        kDebug(debugArea()) << "comparing incidences";
-        KCalCore::Incidence::Ptr incidence=itemToIncidence(newItemList[i]);
-        IncidenceInfo newInfo=incidenceToInfo(incidence);
-        QList<KDateTime> datelist=newInfo.s_date;
-        if (datelist.empty()){
-            kDebug(debugArea()) << "datelist empty";
-            continue;
-        }
-        if (datelist.last()<KDateTime::currentLocalDateTime()){
-            kDebug(debugArea()) << "date limit not match";
-            continue;
-        }
-        IncidenceInfo oldInfo=mSentInfoList[i];
-        if (!incidenceIsIden(newInfo,oldInfo))
-        {
-            kDebug(debugArea()) << "an item not match";
-            kDebug(debugArea()) << oldInfo.uid<<oldInfo.summary<<oldInfo.s_date<<oldInfo.e_date;
-            kDebug(debugArea()) << newInfo.uid<<newInfo.summary<<newInfo.s_date<<newInfo.e_date;
-            return true;
-        }
-    }
-    return false;
+    return KCalCore::Event::Ptr();
 }
 
 KCalCore::Incidence::Ptr CalendarPlugin::parseICal(QString& iCal)
 {
-    //TODO find out a way to parse modify date so that we return the lated version of incidence
-    //In this way we can save a lot
     kDebug(debugArea()) << "parse iCal :\n" << iCal;
-    KCalCore::ICalFormat conventor;
     return conventor.fromString(iCal);
-}
-
-CalendarPlugin::IncidenceInfo  CalendarPlugin::incidenceToInfo(KCalCore::Incidence::Ptr& incidence)
-{
-    IncidenceInfo info;
-    info.uid=incidence->uid();
-    info.summary=incidence->summary();
-    QList<KDateTime> datelist=incidence->startDateTimesForDate(QDate::currentDate(),KDateTime::LocalZone);
-    datelist+=incidence->startDateTimesForDate(QDate::currentDate().addDays(1),KDateTime::LocalZone);
-    info.s_date=datelist;
-    foreach(KDateTime dt,info.s_date){
-        info.e_date.append(incidence->endDateForStart(dt));
-    }
-    return info;
 }
 
 void CalendarPlugin::calendarChanged()
 {
+    shouldSend=true;
     sendCalendar();
 }
 
