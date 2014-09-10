@@ -1,0 +1,4 @@
+Telepathy expects the connection manager to always be present.
+Due to KDEConnects design our plugin is instantiated once per device.
+
+To solve this the connection manager acts as a singleton throughout all plugin instances, in addition a small kded module creates an instance of the connection manager whenever requested by telepathy if a plugin is not available.
