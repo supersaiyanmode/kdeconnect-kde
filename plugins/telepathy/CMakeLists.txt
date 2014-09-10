@@ -1,7 +1,7 @@
 find_package(KdepimLibs REQUIRED)
 
-find_package(TelepathyQt4 0.9.2.1 REQUIRED)
-find_package(TelepathyQt4Service 0.9.2.1 REQUIRED)
+find_package(TelepathyQt4 0.9.5 REQUIRED)
+find_package(TelepathyQt4Service 0.9.5 REQUIRED)
 
 include_directories(
     ${TELEPATHY_QT4_INCLUDE_DIR}
