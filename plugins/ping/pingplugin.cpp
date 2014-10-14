@@ -52,7 +52,33 @@ bool PingPlugin::receivePackage(const NetworkPackage& np)
     notification->sendEvent();
 
     return true;
+}
 
+void PingPlugin::sendPing()
+{
+    NetworkPackage np(PACKAGE_TYPE_PING);
+    bool success = sendPackage(np);
+    kDebug(debugArea()) << "sendPing:" << success;
+}
+
+void PingPlugin::sendPing(const QString& customMessage)
+{
+    NetworkPackage np(PACKAGE_TYPE_PING);
+    if (!customMessage.isEmpty()) {
+        np.set("message", customMessage);
+    }
+    bool success = sendPackage(np);
+    kDebug(debugArea()) << "sendPing:" << success;
+}
+
+void PingPlugin::connected()
+{
+    QDBusConnection::sessionBus().registerObject(dbusPath(), this, QDBusConnection::ExportAllContents);
+}
+
+QString PingPlugin::dbusPath() const
+{
+    return "/modules/kdeconnect/devices/" + device()->id() + "/ping";
 }
 
 void PingPlugin::sendPing()

@@ -27,6 +27,7 @@
 #include <QNetworkSession>
 #include <QNetworkConfigurationManager>
 #include <QtCrypto>
+#include <QNetworkAccessManager>
 
 #include <KConfig>
 #include <KConfigGroup>
@@ -61,6 +62,8 @@ Daemon::Daemon(QObject *parent)
     : QObject(parent)
     , d(new DaemonPrivate)
 {
+    kDebug(debugArea()) << "KdeConnect daemon starting";
+
     KSharedConfigPtr config = KSharedConfig::openConfig("kdeconnectrc");
 
     if (!config->group("myself").hasKey("id")) {
@@ -76,7 +79,7 @@ Daemon::Daemon(QObject *parent)
     if(!QCA::isSupported("rsa")) {
         //TODO: Maybe display this in a more visible way?
         kWarning(debugArea()) << "Error: KDE Connect could not find support for RSA in your QCA installation, if your distribution provides"
-                   << "separate packages for QCA-ossl and QCA-gnupg plugins, make sure you have them installed and try again";
+                   << "separate packages for QCA-ossl and QCA-gnupg plugins, make sure you have them installed and try again.";
         return;
     }
 
@@ -110,14 +113,14 @@ Daemon::Daemon(QObject *parent)
         config->group("myself").writeEntry("privateKeyPath", privateKeyPath);
         config->sync();
     }
-    
     if (QFile::permissions(config->group("myself").readEntry("privateKeyPath")) != strict)
     {
         kWarning(debugArea()) << "Error: KDE Connect detects wrong permissions for private file " << config->group("myself").readEntry("privateKeyPath");
     }
 
-    //Debugging
-    kDebug(debugArea()) << "Starting KdeConnect daemon";
+    //Register on DBus
+    QDBusConnection::sessionBus().registerService("org.kde.kdeconnect");
+    QDBusConnection::sessionBus().registerObject("/modules/kdeconnect", this, QDBusConnection::ExportScriptableContents);
 
     //Load backends (hardcoded by now, should be plugins in a future)
     d->mLinkProviders.insert(new LanLinkProvider());
@@ -133,26 +136,29 @@ Daemon::Daemon(QObject *parent)
         d->mDevices[id] = device;
         Q_EMIT deviceAdded(id);
     }
-    
-    //Listen to connectivity changes
-    QNetworkSession* network = new QNetworkSession(QNetworkConfigurationManager().defaultConfiguration());
+
+    //Listen to new devices
     Q_FOREACH (LinkProvider* a, d->mLinkProviders) {
-        connect(network, SIGNAL(stateChanged(QNetworkSession::State)),
-                a, SLOT(onNetworkChange(QNetworkSession::State)));
         connect(a, SIGNAL(onConnectionReceived(NetworkPackage, DeviceLink*)),
                 this, SLOT(onNewDeviceLink(NetworkPackage, DeviceLink*)));
     }
-
-    QDBusConnection::sessionBus().registerService("org.kde.kdeconnect");
-    QDBusConnection::sessionBus().registerObject("/modules/kdeconnect", this, QDBusConnection::ExportScriptableContents);
-
     setDiscoveryEnabled(true);
 
+    //Listen to connectivity changes
+    QNetworkConfigurationManager* manager = new QNetworkConfigurationManager();
+    QNetworkSession* network = new QNetworkSession(manager->defaultConfiguration());
+    connect(manager, SIGNAL(configurationAdded(QNetworkConfiguration)),
+            this, SLOT(forceOnNetworkChange()));
+    Q_FOREACH (LinkProvider* a, d->mLinkProviders) {
+        connect(network, SIGNAL(stateChanged(QNetworkSession::State)),
+                a, SLOT(onNetworkChange(QNetworkSession::State)));
+    }
+
+    kDebug(debugArea()) << "KdeConnect daemon started";
 }
 
 void Daemon::setDiscoveryEnabled(bool b)
 {
-    //Listen to incomming connections
     Q_FOREACH (LinkProvider* a, d->mLinkProviders) {
         if (b)
             a->onStart();

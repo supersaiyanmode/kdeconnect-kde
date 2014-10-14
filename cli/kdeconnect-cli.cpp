@@ -34,16 +34,19 @@ int main(int argc, char** argv)
     KAboutData about("kdeconnect-cli", "kdeconnect-cli", ki18n(("kdeconnect-cli")), "1.0", ki18n("KDE Connect CLI tool"),
                      KAboutData::License_GPL, ki18n("(C) 2013 Aleix Pol Gonzalez"));
     about.addAuthor( ki18n("Aleix Pol Gonzalez"), KLocalizedString(), "aleixpol@kde.org" );
+    about.addAuthor( ki18n("Albert Vaca Cintora"), KLocalizedString(), "albertvaka@gmail.com" );
     KCmdLineArgs::init(argc, argv, &about);
     KCmdLineOptions options;
     options.add("l")
-           .add("list-devices", ki18n("List all devices"));
-    options.add("share <path>", ki18n("Share a file to a said device"));
-    options.add("pair", ki18n("Request pairing to a said device"));
-    options.add("unpair", ki18n("Stop pairing to a said device"));
-    options.add("ping", ki18n("Sends a ping to said device"));
-    options.add("list-notifications", ki18n("Display the notifications on a said device"));
-    options.add("device <dev>", ki18n("Device ID"));
+           .add("list-devices", ki18n("List all devices."));
+    options.add("refresh", ki18n("Search for devices in the network and re-establish connections."));
+    options.add("pair", ki18n("Request pairing to a said device."));
+    options.add("unpair", ki18n("Stop pairing to a said device."));
+    options.add("ping", ki18n("Send a ping to said device."));
+    options.add("ping-msg <message>", ki18n("Same as ping but you can customize the shown message."));
+    options.add("share <path>", ki18n("Share a file to a said device."));
+    options.add("list-notifications", ki18n("Display the notifications on a said device."));
+    options.add("device <dev>", ki18n("Device ID."));
     KCmdLineArgs::addCmdLineOptions( options );
     KCmdLineArgs* args = KCmdLineArgs::parsedArgs();
     KApplication app;
@@ -67,6 +70,9 @@ int main(int argc, char** argv)
                       << ": " << idx.data(DevicesModel::IdModelRole).toString().toStdString() << ' ' << statusInfo.toStdString() << std::endl;
         }
         std::cout << devices.rowCount() << " devices found" << std::endl;
+    } else if(args->isSet("refresh")) {
+        QDBusMessage msg = QDBusMessage::createMethodCall("org.kde.kdeconnect", "/modules/kdeconnect", "org.kde.kdeconnect.daemon", "forceOnNetworkChange");
+        QDBusConnection::sessionBus().call(msg);
     } else {
         QString device;
         if(!args->isSet("device")) {
@@ -99,8 +105,12 @@ int main(int argc, char** argv)
                 QDBusPendingReply<void> req = dev.unpair();
                 req.waitForFinished();
             }
-        } else if(args->isSet("ping")) {
+        } else if(args->isSet("ping") || args->isSet("ping-msg")) {
             QDBusMessage msg = QDBusMessage::createMethodCall("org.kde.kdeconnect", "/modules/kdeconnect/devices/"+device+"/ping", "org.kde.kdeconnect.device.ping", "sendPing");
+            if (args->isSet("ping-msg")) {
+                QString message = args->getOption("ping-msg");
+                msg.setArguments(QVariantList() << message);
+            }
             QDBusConnection::sessionBus().call(msg);
         } else if(args->isSet("list-notifications")) {
             NotificationsModel notifications;
