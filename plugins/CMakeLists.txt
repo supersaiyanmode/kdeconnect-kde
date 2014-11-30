@@ -13,5 +13,9 @@ add_subdirectory(share)
 add_subdirectory(notifications)
 add_subdirectory(sftp)
 
+if (TelepathyQt5_FOUND)
+add_subdirectory(telepathy)
+endif()
+
 #FIXME: If we split notifications in several files, they won't appear in the same group in the Notifications KCM
 install(FILES kdeconnect.notifyrc DESTINATION ${KNOTIFYRC_INSTALL_DIR})

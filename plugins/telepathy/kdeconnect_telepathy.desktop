@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=KdeConnect/Plugin
+X-KDE-Library=kdeconnect_telepathy
+X-KDE-PluginInfo-Author=Alexandr Akulich, David Edmundson
+X-KDE-PluginInfo-Email=akulichalexander@gmail.com
+X-KDE-PluginInfo-Name=kdeconnect_telepathy
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+Icon=telepathy-kde
+Name=Telepathy integration
+Comment=Show SMS as telepathy messages
+
+X-KdeConnect-SupportedPackageType=kdeconnect.telepathy,kdeconnect.ping,kdeconnect.telepathy
+X-KdeConnect-OutgoingPackageType=kdeconnect.telepathy

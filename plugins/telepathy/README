@@ -1,0 +1,5 @@
+Telepathy expects the connection manager to always be present.
+Due to KDEConnects design our plugin is instantiated once per device.
+
+To solve this we need the telepathy-cm as part of the main daemon.
+It acts as a singleton that the device plugin can talk to

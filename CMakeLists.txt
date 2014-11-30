@@ -8,6 +8,8 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_SOURCE_DI
 find_package(Qt5 5.2 REQUIRED COMPONENTS Quick Test)
 find_package(KF5 REQUIRED COMPONENTS I18n KIO Notifications ConfigWidgets DBusAddons KCMUtils IconThemes)
 find_package(Qca REQUIRED)
+find_package(TelepathyQt5 0.9.5)
+find_package(TelepathyQt5Service 0.9.5)
 
 include(KDEInstallDirs)
 include(KDECompilerSettings)
@@ -31,6 +33,9 @@ add_subdirectory(plugins)
 add_subdirectory(plasmoid)
 add_subdirectory(cli)
 add_subdirectory(fileitemactionplugin)
+if (TelepathyQt5_FOUND)
+    add_subdirectory(telepathy-cm)
+endif()
 
 add_subdirectory(tests)
 
