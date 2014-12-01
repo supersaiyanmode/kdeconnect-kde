@@ -10,6 +10,9 @@ find_package(KF5 REQUIRED COMPONENTS I18n KIO Notifications ConfigWidgets DBusAd
 find_package(Qca REQUIRED)
 find_package(TelepathyQt5 0.9.5)
 find_package(TelepathyQt5Service 0.9.5)
+if (TelepathyQt5_FOUND)
+    add_definitions(-DHAVE_TELEPATHY)
+endif()
 
 include(KDEInstallDirs)
 include(KDECompilerSettings)

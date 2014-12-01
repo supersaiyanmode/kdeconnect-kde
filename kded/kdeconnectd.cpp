@@ -29,7 +29,10 @@
 #include <KDBusService>
 
 #include "core/daemon.h"
+
+#ifdef HAVE_TELEPATHY
 #include "telepathy-cm/kdeconnecttelepathyprotocol.h"
+#endif
 
 static int sigtermfd[2];
 const static char deadbeef = 1;
@@ -74,9 +77,9 @@ int main(int argc, char* argv[])
     QObject::connect(daemon, SIGNAL(destroyed(QObject*)), &app, SLOT(quit()));
     initializeTermHandlers(&app, daemon);
     
-    //ifdef
+#ifdef HAVE_TELEPATHY
     auto telepathyPlugin = KDEConnectTelepathyProtocolFactory::simpleProtocol();
-    //endif
+#endif
 
     return app.exec();
 }

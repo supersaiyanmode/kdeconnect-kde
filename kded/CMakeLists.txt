@@ -9,7 +9,10 @@ install(TARGETS kded_kdeconnect DESTINATION ${PLUGIN_INSTALL_DIR})
 install(FILES kdeconnect.desktop DESTINATION ${SERVICES_INSTALL_DIR}/kded)
 
 add_executable(kdeconnectd kdeconnectd.cpp)
-target_link_libraries(kdeconnectd kdeconnectcore KF5::DBusAddons KF5::ConfigWidgets connectcm)
+target_link_libraries(kdeconnectd kdeconnectcore KF5::DBusAddons KF5::ConfigWidgets)
+if (TelepathyQt5_FOUND)
+    target_link_libraries(kdeconnectd connectcm)
+endif()
 install(TARGETS kdeconnectd DESTINATION ${LIBEXEC_INSTALL_DIR})
 
 include(DbusActivationMacros)
