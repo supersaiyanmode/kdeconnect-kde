@@ -71,12 +71,14 @@ bool BatteryPlugin::receivePackage(const NetworkPackage& np)
     }
 
     if ( thresholdEvent == ThresholdBatteryLow && !isCharging ) {
+#ifndef CMAKE_DISABLE_GUI
         KNotification* notification = new KNotification("batteryLow");
         notification->setPixmap(KIcon("battery-040").pixmap(48, 48));
         notification->setComponentData(KComponentData("kdeconnect", "kdeconnect-kded"));
         notification->setTitle(i18nc("device name: low battery", "%1: low battery", device()->name()));
         notification->setText(i18n("Battery at %1%", currentCharge));
         notification->sendEvent();
+#endif
     }
 
     return true;

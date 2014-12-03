@@ -26,7 +26,7 @@
 #include <KStandardDirs>
 #include <KSharedConfig>
 #include <KConfigGroup>
-#include <KJobTrackerInterface>
+#include <kjobtrackerinterface.h>
 
 #include <qprocess.h>
 #include <QDir>

@@ -63,7 +63,6 @@ private Q_SLOTS:
     
 private:
     QString dbusPath() const { return "/modules/kdeconnect/devices/" + device()->id() + "/sftp"; }
-    void knotify(int type, const QString& text, const QPixmap& icon) const;
     void addToDolphin();
     void removeFromDolphin();
     

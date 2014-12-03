@@ -191,21 +191,18 @@ void SftpPlugin::onUnmounted(bool idleTimeout)
 
 void SftpPlugin::onFailed(const QString& message)
 {
-    knotify(KNotification::Error
-        , message
-        , KIconLoader::global()->loadIcon("dialog-error", KIconLoader::Desktop)
-    );
+
+#ifdef CMAKE_DISABLE_GUI
+    qDebug() << device()->name() << ":" << message;
+#else
+    KNotification::event(KNotification::StandardEvent(KNotification::Error)
+    , i18n("Device %1", device()->name()), message, KIconLoader::global()->loadIcon("dialog-error", KIconLoader::Desktop), 0
+    , KNotification::CloseOnTimeout);
+#endif
 
     unmount();
 
     Q_EMIT unmounted();
-}
-
-void SftpPlugin::knotify(int type, const QString& text, const QPixmap& icon) const
-{
-    KNotification::event(KNotification::StandardEvent(type)
-      , i18n("Device %1", device()->name()), text, icon, 0
-      , KNotification::CloseOnTimeout);
 }
 
 QVariantMap SftpPlugin::getDirectories()

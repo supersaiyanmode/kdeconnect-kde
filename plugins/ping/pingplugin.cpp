@@ -44,12 +44,19 @@ PingPlugin::~PingPlugin()
 
 bool PingPlugin::receivePackage(const NetworkPackage& np)
 {
+    QString name = device()->name();
+    QString message = np.get<QString>("message",i18n("Ping!")); //This can be a source of spam
+
+#ifdef CMAKE_DISABLE_GUI
+    qDebug() << "Ping from" << name << ":" << message;
+#else
     KNotification* notification = new KNotification("pingReceived"); //KNotification::Persistent
     notification->setPixmap(KIcon("dialog-ok").pixmap(48, 48));
     notification->setComponentData(KComponentData("kdeconnect", "kdeconnect-kded"));
-    notification->setTitle(device()->name());
-    notification->setText(np.get<QString>("message",i18n("Ping!"))); //This can be a source of spam
+    notification->setTitle(name);
+    notification->setText(message);
     notification->sendEvent();
+#endif
 
     return true;
 }

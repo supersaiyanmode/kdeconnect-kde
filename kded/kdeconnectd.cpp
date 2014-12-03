@@ -24,9 +24,13 @@
 #include <unistd.h>
 
 #include <QSocketNotifier>
-#include <KUniqueApplication>
-#include <KAboutData>
-#include <KCmdLineArgs>
+#ifdef CMAKE_DISABLE_GUI
+    #include <QCoreApplication>
+#else
+    #include <KUniqueApplication>
+    #include <KAboutData>
+    #include <KCmdLineArgs>
+#endif
 
 #include "core/daemon.h"
 
@@ -59,6 +63,10 @@ void initializeTermHandlers(QCoreApplication* app, Daemon* daemon)
 
 int main(int argc, char* argv[])
 {
+
+#ifdef CMAKE_DISABLE_GUI
+    QCoreApplication app(argc, argv);
+#else
     KAboutData aboutData("kdeconnect", "kdeconnect-kded",
                          ki18n("kdeconnect"),
                          "0.1",
@@ -71,17 +79,18 @@ int main(int argc, char* argv[])
     aboutData.setOrganizationDomain("kde.org");
 
     KCmdLineArgs::init(argc, argv, &aboutData);
-    
+
     KUniqueApplication app(true); // WARNING GUI required for QClipboard access
     app.disableSessionManagement();
     app.setQuitOnLastWindowClosed(false);
+#endif
 
     //Force daemon to destroy when KApplications in alive
     //belongs to bug KApplications resoure freeing
     Daemon* daemon = new Daemon(0);
     QObject::connect(daemon, SIGNAL(destroyed(QObject*)), &app, SLOT(quit()));
     initializeTermHandlers(&app, daemon);
-    
+
     return app.exec();
 }
 

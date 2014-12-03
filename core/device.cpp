@@ -26,6 +26,7 @@
 
 #include <QDBusConnection>
 #include <QFile>
+#include <QDebug>
 
 #include <KSharedConfig>
 #include <KConfigGroup>
@@ -369,6 +370,11 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 
                 kDebug(debugArea()) << "Pair request";
 
+                //TODO: Instead of adding ifs, this should be in a different class that we can replace to provide different implementations
+#ifdef CMAKE_DISABLE_GUI
+                qDebug() << "Pairing requests can not be accepted without a GUI, this end has to initiate the pairing";
+
+#else
                 KNotification* notification = new KNotification("pairingRequest");
                 notification->setPixmap(KIcon("dialog-information").pixmap(48, 48));
                 notification->setComponentData(KComponentData("kdeconnect", "kdeconnect"));
@@ -378,6 +384,7 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
                 connect(notification, SIGNAL(action1Activated()), this, SLOT(acceptPairing()));
                 connect(notification, SIGNAL(action2Activated()), this, SLOT(rejectPairing()));
                 notification->sendEvent();
+#endif
 
                 m_pairStatus = Device::RequestedByPeer;
 
