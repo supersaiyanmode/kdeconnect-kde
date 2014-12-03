@@ -27,7 +27,7 @@
 
 #include <KDEDModule>
 #include <KPluginFactory>
-#include "kdeconnectcore_export.h"
+#include "core/kdeconnectcore_export.h"
 
 class DaemonPrivate;
 class NetworkPackage;

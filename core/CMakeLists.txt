@@ -45,7 +45,9 @@ LINK_PRIVATE
     ${QT_QTNETWORK_LIBRARY}
     ${QCA2_LIBRARIES}
 )
-target_include_directories(kdeconnectcore PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+#target_include_directories(kdeconnectcore PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
 generate_export_header(kdeconnectcore EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/kdeconnectcore_export.h BASE_NAME KDEConnectCore)
 
 include(DbusInterfaceMacros)

@@ -76,12 +76,14 @@ void NotificationsDbusInterface::processPackage(const NetworkPackage& np)
 
         //Do not show updates to existent notification nor answers to a initialization request
         if (!mInternalIdToPublicId.contains(noti->internalId()) && !np.get<bool>("requestAnswer", false)) {
+#ifndef CMAKE_DISABLE_GUI
             KNotification* notification = new KNotification("notification", KNotification::CloseOnTimeout, this);
             notification->setPixmap(KIcon("preferences-desktop-notification").pixmap(48, 48));
             notification->setComponentData(KComponentData("kdeconnect", "kdeconnect"));
             notification->setTitle(mDevice->name());
             notification->setText(noti->appName() + ": " + noti->ticker());
             notification->sendEvent();
+#endif
         }
 
         addNotification(noti);

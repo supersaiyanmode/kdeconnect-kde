@@ -1,3 +1,4 @@
+#TODO: We should not only specify the library version, but the entire KDE Connect version
 set(KDECONNECT_VERSION_MAJOR 1)
 set(KDECONNECT_VERSION_MINOR 0)
 set(KDECONNECT_VERSION_PATCH 1)
