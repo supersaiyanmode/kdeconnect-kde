@@ -372,7 +372,7 @@ void Device::privateReceivedPackage(const NetworkPackage& np)
 
                 //TODO: Instead of adding ifs, this should be in a different class that we can replace to provide different implementations
 #ifdef CMAKE_DISABLE_GUI
-                qDebug() << "Pairing requests can not be accepted without a GUI, this end has to initiate the pairing";
+                qWarning() << "Pairing requests can not be accepted without a GUI, this end has to initiate the pairing";
 
 #else
                 KNotification* notification = new KNotification("pairingRequest");

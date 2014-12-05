@@ -2,7 +2,7 @@ project(kdeconnect)
 
 cmake_minimum_required(VERSION 2.6)
 
-set(DISABLE_GUI NO CACHE STRING "Compile a cli-only version that does not requrie X, to run for example on embedded systems")
+option(DISABLE_GUI "Compile a cli-only version that does not requrie X, to run for example on embedded systems" NO)
 if(DISABLE_GUI)
     add_definitions(-DCMAKE_DISABLE_GUI)
 endif()
