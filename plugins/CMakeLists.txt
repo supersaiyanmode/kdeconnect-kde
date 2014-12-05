@@ -13,6 +13,7 @@ add_subdirectory(share)
 add_subdirectory(notifications)
 add_subdirectory(sftp)
 add_subdirectory(screensaver-inhibit)
+add_subdirectory(runcommand)
 
 if(EXPERIMENTALAPP_ENABLED)
     add_subdirectory(mprisremote)

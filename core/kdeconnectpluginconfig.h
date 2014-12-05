@@ -25,6 +25,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVariant>
+#include <QJsonObject>
 
 #include "default_args.h"
 #include "kdeconnectcore_export.h"
@@ -60,8 +61,18 @@ public:
         return get(key, QVariant(defaultValue)).template value<T>(); //Important note: Awesome template syntax is awesome
     }
 
+    QJsonObject jsonConfig();
+    void storeJsonConfig(QJsonObject json);
+
+public Q_SIGNAL:
+    //TODO
+    //void configChanged();
+    //void jsonConfigChanged(QJsonObject newConfig);
 
 private:
+    void lazyLoad();
+    void lazyLoadJson();
+
     QScopedPointer<KdeConnectPluginConfigPrivate> d;
 };
 

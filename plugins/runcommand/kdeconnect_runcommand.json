@@ -1,0 +1,28 @@
+{
+    "Encoding": "UTF-8", 
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "albertvaka@gmail.com", 
+                "Name": "Albert Vaca"
+            }
+        ], 
+        "Description": "Execute console commands",
+        "EnabledByDefault": true, 
+        "Icon": "system-run",
+        "Id": "kdeconnect_ping", 
+        "License": "GPL", 
+        "Name": "Run commands",
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ], 
+        "Version": "0.1", 
+        "Website": "http://albertvaka.wordpress.com"
+    }, 
+    "X-KdeConnect-OutgoingPackageType": [
+        "kdeconnect.runcommand"
+    ], 
+    "X-KdeConnect-SupportedPackageType": [
+        "kdeconnect.runcommand"
+    ]
+}

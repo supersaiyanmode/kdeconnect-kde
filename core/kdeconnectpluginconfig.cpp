@@ -22,13 +22,14 @@
 
 #include <QDir>
 #include <QSettings>
+#include <QJsonDocument>
 
 #include "kdeconnectconfig.h"
 
 struct KdeConnectPluginConfigPrivate
 {
     QDir mConfigDir;
-    QSettings* mConfig;
+    QSettings* mConfig = 0;
 };
 
 KdeConnectPluginConfig::KdeConnectPluginConfig(const QString& deviceId, const QString& pluginName)
@@ -36,8 +37,6 @@ KdeConnectPluginConfig::KdeConnectPluginConfig(const QString& deviceId, const QS
 {
     d->mConfigDir = KdeConnectConfig::instance()->pluginConfigDir(deviceId, pluginName);
     QDir().mkpath(d->mConfigDir.path());
-
-    d->mConfig = new QSettings(d->mConfigDir.absoluteFilePath("config"), QSettings::IniFormat);
 }
 
 KdeConnectPluginConfig::~KdeConnectPluginConfig()
@@ -52,12 +51,46 @@ QDir KdeConnectPluginConfig::privateDirectory()
 
 QVariant KdeConnectPluginConfig::get(const QString& key, const QVariant& defaultValue)
 {
+    lazyLoad();
     d->mConfig->sync();
     return d->mConfig->value(key, defaultValue);
 }
 
 void KdeConnectPluginConfig::set(const QString& key, const QVariant& value)
 {
+    lazyLoad();
     d->mConfig->setValue(key, value);
     d->mConfig->sync();
+}
+
+void KdeConnectPluginConfig::lazyLoad()
+{
+    if (!d->mConfig) {
+        QString path = d->mConfigDir.absoluteFilePath("config");
+        d->mConfig = new QSettings(path, QSettings::IniFormat);
+    }
+}
+
+QJsonObject KdeConnectPluginConfig::jsonConfig()
+{
+    QString path = d->mConfigDir.absoluteFilePath("jsonConfig");
+    QFile jsonFile(path);
+    jsonFile.open(QFile::ReadOnly);
+    QJsonParseError error;
+    QJsonDocument document = QJsonDocument::fromJson(jsonFile.readAll(), &error);
+    //if (error != QJsonParseError::NoError) {
+        return document.object();
+    //} else {
+    //    return QJsonObject();
+    //}
+}
+
+void KdeConnectPluginConfig::storeJsonConfig(QJsonObject json)
+{
+    QString path = d->mConfigDir.absoluteFilePath("jsonConfig");
+    QFile jsonFile(path);
+    jsonFile.open(QFile::WriteOnly);
+    QJsonDocument toStore;
+    toStore.setObject(json);
+    jsonFile.write(toStore.toJson());
 }

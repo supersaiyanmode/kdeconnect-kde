@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=KdeConnect/Plugin
+X-KDE-Library=kdeconnect_runcommand
+X-KDE-PluginInfo-Author=Albert Vaca
+X-KDE-PluginInfo-Email=albertvaka@gmail.com
+X-KDE-PluginInfo-Name=kdeconnect_runcommand
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=http://albertvaka.wordpress.com
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+Icon=dialog-ok
+Name=Run commands
+Comment=Execute console commands
+X-KdeConnect-SupportedPackageType=kdeconnect.runcommand
+X-KdeConnect-OutgoingPackageType=kdeconnect.runcommand
