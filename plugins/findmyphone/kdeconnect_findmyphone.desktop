@@ -1,0 +1,20 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Service
+ServiceTypes=KdeConnect/Plugin
+X-KDE-Library=kdeconnect_findmyphone
+X-KDE-PluginInfo-Author=Mikhail Ivchenko
+X-KDE-PluginInfo-Email=ematirov@gmail.com
+X-KDE-PluginInfo-Name=kdeconnect_findmyphone
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+Icon=dialog-ok
+Name=Find my phone
+Name[x-test]=xxFind my phonexx
+Comment=Find phone
+Comment[x-test]=xxFind phonexx
+
+X-KdeConnect-SupportedPackageType=kdeconnect.findmyphone
+X-KdeConnect-OutgoingPackageType=kdeconnect.findmyphone
