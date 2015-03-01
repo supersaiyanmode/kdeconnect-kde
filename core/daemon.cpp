@@ -38,6 +38,7 @@
 #include "core_debug.h"
 #include "dbushelper.h"
 #include "networkpackage.h"
+#include "backends/bluetooth/bluetoothlinkprovider.h"
 #include "backends/lan/lanlinkprovider.h"
 #include "backends/loopback/loopbacklinkprovider.h"
 #include "device.h"
@@ -125,9 +126,10 @@ Daemon::Daemon(QObject *parent)
     QDBusConnection::sessionBus().registerService("org.kde.kdeconnect");
     QDBusConnection::sessionBus().registerObject("/modules/kdeconnect", this, QDBusConnection::ExportScriptableContents);
 
-    //Load backends (hardcoded by now, should be plugins in a future)
-    d->mLinkProviders.insert(new LanLinkProvider());
+    //Load backends
     //d->mLinkProviders.insert(new LoopbackLinkProvider());
+    d->mLinkProviders.insert(new LanLinkProvider());
+    d->mLinkProviders.insert(new BluetoothLinkProvider());
 
     //Read remebered paired devices
     const KConfigGroup& known = config->group("trusted_devices");

@@ -8,12 +8,14 @@ include_directories(
 
 add_subdirectory(backends/lan)
 add_subdirectory(backends/loopback)
+add_subdirectory(backends/bluetooth)
 
 set(kded_kdeconnect_SRCS
     ${backends_kdeconnect_SRCS}
 
     backends/linkprovider.cpp
     backends/devicelink.cpp
+    backends/devicelinereader.cpp
 
     kdeconnectplugin.cpp
     pluginloader.cpp
@@ -31,6 +33,7 @@ PUBLIC
     Qt5::Network
     KF5::KIOCore
     qca-qt5
+    Qt5::Bluetooth
 PRIVATE
     Qt5::DBus
     Qt5::Gui
