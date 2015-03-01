@@ -128,7 +128,10 @@ Daemon::Daemon(QObject *parent)
 
     //Load backends
     //d->mLinkProviders.insert(new LoopbackLinkProvider());
+    /*
+    //TODO: COMMENTED TO EASE WORKING ON THE BLUETOOTH BACKEND!*
     d->mLinkProviders.insert(new LanLinkProvider());
+    */
     d->mLinkProviders.insert(new BluetoothLinkProvider());
 
     //Read remebered paired devices
