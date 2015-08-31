@@ -52,6 +52,13 @@ struct default_arg<QString> {
     static QString get() { return QString(); }
 };
 
+//QStringList -> empty QStringList
+template<>
+struct default_arg<QStringList>
+{
+    static QStringList get() { return QStringList(); }
+};
+
 template<class T>
 struct default_arg<T*> {
     static T* get() { return NULL;}
