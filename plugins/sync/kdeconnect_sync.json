@@ -1,0 +1,28 @@
+{
+    "Encoding": "UTF-8",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "bansal.ashish096@gmail.com",
+                "Name": "Ashish Bansal"
+            }
+        ],
+        "Description": "Sync folder across the devices",
+        "EnabledByDefault": true,
+        "Icon": "dialog-ok",
+        "Id": "kdeconnect_sync",
+        "License": "GPL",
+        "Name": "Sync",
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ],
+        "Version": "0.1",
+        "Website": "http://ashish-bansal.in"
+    },
+    "X-KdeConnect-OutgoingPackageType": [
+        "kdeconnect.sync"
+    ],
+    "X-KdeConnect-SupportedPackageType": [
+        "kdeconnect.sync"
+    ]
+}

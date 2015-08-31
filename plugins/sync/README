@@ -1,0 +1,3 @@
+This plugin syncs the directory across different devices and  uses network package
+of type "kdeconnect.sync". If the package has payload, then it just downloads the
+file at correct place or otherwise it contains the list of files available on other devices.
