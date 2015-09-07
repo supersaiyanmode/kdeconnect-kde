@@ -25,8 +25,8 @@
 #include <QApplication>
 #include <QNetworkAccessManager>
 
+#include <libsnore/snore.h>
 #include <KDBusService>
-#include <KNotification>
 #include <KLocalizedString>
 #include <KIO/AccessManager>
 
@@ -86,24 +86,35 @@ public:
     DesktopDaemon(QObject* parent = Q_NULLPTR)
         : Daemon(parent)
         , m_nam(Q_NULLPTR)
-    {}
+        , m_app(Snore::Application(QStringLiteral("KDE Connect"), i18n("KDE Connect"), Snore::Icon(QIcon::fromTheme("kdeconnect"))))
+    {
+        Snore::SnoreCore &snore = Snore::SnoreCore::instance();
+        snore.registerApplication(m_app);
+
+        connect(&Snore::SnoreCore::instance(), &Snore::SnoreCore::actionInvoked, this, &DesktopDaemon::notification);
+    }
 
     void requestPairing(Device* d) Q_DECL_OVERRIDE
     {
-        KNotification* notification = new KNotification("pairingRequest");
-        notification->setIconName(QStringLiteral("dialog-information"));
-        notification->setComponentName("kdeconnect");
-        notification->setText(i18n("Pairing request from %1", d->name()));
-        notification->setActions(QStringList() << i18n("Accept") << i18n("Reject"));
-        connect(notification, &KNotification::ignored, d, &Device::rejectPairing);
-        connect(notification, &KNotification::action1Activated, d, &Device::acceptPairing);
-        connect(notification, &KNotification::action2Activated, d, &Device::rejectPairing);
-        notification->sendEvent();
+        Snore::Notification noti(m_app, m_app.defaultAlert(), i18n("Pair"), i18n("Pairing request from %1", d->name()), m_app.icon());
+        noti.addAction(Snore::Action(1, i18n("Accept")));
+        noti.addAction(Snore::Action(2, i18n("Reject")));
+        noti.hints().setValue("device", QVariant::fromValue(d));
+        Snore::SnoreCore::instance().broadcastNotification(noti);
     }
 
     void reportError(const QString & title, const QString & description) Q_DECL_OVERRIDE
     {
-        KNotification::event(KNotification::Error, title, description);
+        Snore::Notification noti(m_app, m_app.defaultAlert(), title, description, m_app.icon());
+        Snore::SnoreCore::instance().broadcastNotification(noti);
+    }
+
+    void notification(const Snore::Notification &noti) {
+        Device* d = noti.constHints().value("device").value<Device*>();
+        if (noti.actionInvoked().id() == 1)
+            d->acceptPairing();
+        else
+            d->rejectPairing();
     }
 
     QNetworkAccessManager* networkAccessManager() Q_DECL_OVERRIDE
@@ -116,6 +127,7 @@ public:
 
 private:
     QNetworkAccessManager* m_nam;
+    Snore::Application m_app;
 };
 
 int main(int argc, char* argv[])
