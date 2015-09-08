@@ -89,6 +89,7 @@ public:
         , m_app(Snore::Application(QStringLiteral("KDE Connect"), i18n("KDE Connect"), Snore::Icon(QIcon::fromTheme("kdeconnect"))))
     {
         Snore::SnoreCore &snore = Snore::SnoreCore::instance();
+        snore.loadPlugins(Snore::SnorePlugin::BACKEND | Snore::SnorePlugin::SECONDARY_BACKEND);
         snore.registerApplication(m_app);
 
         connect(&Snore::SnoreCore::instance(), &Snore::SnoreCore::actionInvoked, this, &DesktopDaemon::notification);
