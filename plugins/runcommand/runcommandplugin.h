@@ -39,6 +39,7 @@ public:
     explicit RunCommandPlugin(QObject *parent, const QVariantList &args);
     virtual ~RunCommandPlugin();
 
+
 public Q_SLOTS:
     virtual bool receivePackage(const NetworkPackage& np);
     virtual void connected();

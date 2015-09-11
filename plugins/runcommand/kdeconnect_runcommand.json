@@ -10,7 +10,7 @@
         "Description": "Execute console commands",
         "EnabledByDefault": true, 
         "Icon": "system-run",
-        "Id": "kdeconnect_ping", 
+        "Id": "kdeconnect_runcommand",
         "License": "GPL", 
         "Name": "Run commands",
         "ServiceTypes": [
