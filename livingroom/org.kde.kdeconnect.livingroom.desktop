@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=KDE Connect Living Room
+Comment=Share your data with your peers
+Exec=kdeconnect-livingroom
+Icon=kdeconnect
+Type=Application
+Terminal=false
+Categories=Qt;KDE;Network
