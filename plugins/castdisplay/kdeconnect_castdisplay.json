@@ -1,0 +1,28 @@
+{
+    "Encoding": "UTF-8", 
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "aleixpol@kde.org",
+                "Name": "Aleix Pol i Gonzalez"
+            }
+        ], 
+        "Description": "Show stuff in my screen",
+        "EnabledByDefault": false,
+        "Icon": "media-playback-start", 
+        "Id": "kdeconnect_castdisplay",
+        "License": "GPL", 
+        "Name": "Cast Display",
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ], 
+        "Version": "0.1", 
+        "Website": "http://kde.org"
+    }, 
+    "X-KdeConnect-OutgoingPackageType": [
+        "kdeconnect.castdisplay"
+    ], 
+    "X-KdeConnect-SupportedPackageType": [
+        "kdeconnect.castremote"
+    ]
+}

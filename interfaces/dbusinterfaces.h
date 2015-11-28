@@ -33,6 +33,7 @@
 #include "interfaces/mprisremoteinterface.h"
 #include "interfaces/remotecontrolinterface.h"
 #include "interfaces/lockdeviceinterface.h"
+#include "interfaces/castdisplayinterface.h"
 
 /**
  * Using these "proxy" classes just in case we need to rename the
@@ -160,6 +161,19 @@ class KDECONNECTINTERFACES_EXPORT FindMyPhoneDeviceDbusInterface
 public:
     explicit FindMyPhoneDeviceDbusInterface(const QString& deviceId, QObject* parent = nullptr);
     virtual ~FindMyPhoneDeviceDbusInterface();
+};
+
+class KDECONNECTINTERFACES_EXPORT CastDisplayDbusInterface
+    : public OrgKdeKdeconnectCastdisplayInterface
+{
+    Q_OBJECT
+public:
+    explicit CastDisplayDbusInterface(QObject* parent = nullptr);
+    virtual ~CastDisplayDbusInterface();
+
+Q_SIGNALS:
+    void startProgram(const QString& programPath, const QJsonObject& data);
+
 };
 
 #endif

@@ -1,0 +1,3 @@
+kdeconnect_add_plugin(kdeconnect_castremote JSON kdeconnect_castremote.json SOURCES castremoteplugin.cpp)
+
+target_link_libraries(kdeconnect_castremote kdeconnectcore)

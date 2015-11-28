@@ -1,0 +1,28 @@
+{
+    "Encoding": "UTF-8", 
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "aleixpol@kde.org", 
+                "Name": "Aleix Pol"
+            }
+        ], 
+        "Description": "Cast on a KDE Connect powered display",
+        "EnabledByDefault": true, 
+        "Icon": "applications-multimedia", 
+        "Id": "kdeconnect_castremote",
+        "License": "GPL", 
+        "Name": "Cast Remote",
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ], 
+        "Version": "0.1", 
+        "Website": "https://kde.org"
+    }, 
+    "X-KdeConnect-OutgoingPackageType": [
+        "kdeconnect.castremote"
+    ], 
+    "X-KdeConnect-SupportedPackageType": [
+        "kdeconnect.castdisplay"
+    ]
+}

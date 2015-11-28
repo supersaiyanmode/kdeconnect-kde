@@ -17,6 +17,8 @@ if(NOT WIN32)
     add_subdirectory(sftp)
 endif()
 
+add_subdirectory(castdisplay)
+add_subdirectory(castremote)
 add_subdirectory(findmyphone)
 
 if(EXPERIMENTALAPP_ENABLED)

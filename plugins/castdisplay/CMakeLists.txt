@@ -1,0 +1,3 @@
+kdeconnect_add_plugin(kdeconnect_castdisplay JSON kdeconnect_castdisplay.json SOURCES castdisplayplugin.cpp)
+
+target_link_libraries(kdeconnect_castdisplay kdeconnectcore Qt5::DBus)

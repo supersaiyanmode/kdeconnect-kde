@@ -146,6 +146,16 @@ FindMyPhoneDeviceDbusInterface::~FindMyPhoneDeviceDbusInterface()
 {
 }
 
+CastDisplayDbusInterface::CastDisplayDbusInterface(QObject* parent):
+    OrgKdeKdeconnectCastdisplayInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/castdisplay", QDBusConnection::sessionBus(), parent)
+{
+    connect(this, &OrgKdeKdeconnectCastdisplayInterface::startProgramSerialized, this, [this](const QString& path, const QByteArray &data) {
+        Q_EMIT startProgram(path, QJsonDocument::fromJson(data).object());
+    });
+}
 
+CastDisplayDbusInterface::~CastDisplayDbusInterface()
+{
+}
 
 #include "dbusinterfaces.moc"
