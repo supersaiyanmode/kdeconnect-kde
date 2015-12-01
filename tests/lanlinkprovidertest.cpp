@@ -184,9 +184,10 @@ void LanLinkProviderTest::pairedDeviceUdpPackageReceived()
     serverSocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     serverSocket->setPeerVerifyName(kcc->deviceId());
 
-
     serverSocket->startClientEncryption(); // Its TCP server. but SSL client
+    QVERIFY(!serverSocket->isEncrypted());
     mLoop.exec();
+    qDebug() << "xxxxxxxxx" << serverSocket->sslErrors();
 
     QCOMPARE(serverSocket->sslErrors().size(), 0);
     QVERIFY2(serverSocket->isValid(), "Server socket disconnected");
