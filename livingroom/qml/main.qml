@@ -62,18 +62,6 @@ ApplicationWindow
         }
     }
 
-    Component {
-        id: unknownViewer
-        Item {
-            Text {
-                property string source
-                anchors.centerIn: parent
-//                 text: i18n ("Received file: %1", source)
-                text: "Received file: " + source
-            }
-        }
-    }
-
     StackView {
         id: view
         anchors.fill: parent
