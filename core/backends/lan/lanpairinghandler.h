@@ -41,7 +41,7 @@ public:
     virtual void unpair() Q_DECL_OVERRIDE;
 
 public Q_SLOTS:
-    virtual void pairingTimeout();
+    virtual void pairingTimeout() Q_DECL_OVERRIDE;
 
 private:
     virtual void setAsPaired() Q_DECL_OVERRIDE;
