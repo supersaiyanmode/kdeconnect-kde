@@ -21,9 +21,12 @@
 #ifndef PINGPLUGIN_H
 #define PINGPLUGIN_H
 
-#include <QObject>
+#include <map>
+#include <QVariantList>
 
 #include <core/kdeconnectplugin.h>
+
+#include "script.h"
 
 //#define PACKAGE_TYPE_PING QLatin1String("kdeconnect.ping")
 
@@ -42,7 +45,11 @@ public Q_SLOTS:
     void connected() override;
 
 private:
+    QVariantList getScripts() const;
     QString dbusPath() const;
+    
+    
+    std::map<std::string, Script> scripts;
 };
 
 #endif
