@@ -110,7 +110,7 @@ QSet<QString> PluginLoader::pluginsForCapabilities(const QSet<QString>& incoming
         const QSet<QString> pluginOutgoingCapabilities = KPluginMetaData::readStringList(service.rawData(), "X-KdeConnect-OutgoingPackageType").toSet();
 
         if ((pluginIncomingCapabilities.isEmpty() && pluginOutgoingCapabilities.isEmpty())
-            || incoming.intersects(pluginOutgoingCapabilities) || outgoing.intersects(pluginIncomingCapabilities)) {
+            || (incoming & pluginOutgoingCapabilities).size() || (outgoing & pluginIncomingCapabilities).size()) {
             ret += service.pluginId();
         } else {
             qCDebug(KDECONNECT_CORE) << "Not loading plugin" << service.pluginId() <<  "because device doesn't support it";
