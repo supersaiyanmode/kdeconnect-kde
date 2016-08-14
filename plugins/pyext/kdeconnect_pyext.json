@@ -1,0 +1,28 @@
+{
+    "Encoding": "UTF-8", 
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "supersaiyanmode.rox@gmail.com", 
+                "Name": "Srivatsan Iyer"
+            }
+        ], 
+        "Description": "Python Extension to KdeConnect", 
+        "EnabledByDefault": true, 
+        "Icon": "dialog-ok", 
+        "Id": "kdeconnect_pyext", 
+        "License": "GPL", 
+        "Name": "PyExt", 
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ],
+        "Version": "0.1", 
+        "Website": "http://srivatsaniyer.com"
+    },
+    "X-KdeConnect-OutgoingPackageType": [
+        "kdeconnect.pyext"
+    ], 
+    "X-KdeConnect-SupportedPackageType": [
+        "kdeconnect.pyext"
+    ]
+}
