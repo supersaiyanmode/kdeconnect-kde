@@ -25,15 +25,15 @@ std::string Script::guid() const {
     return _name;
 }
 
-QString Script::invoke(const std::map<std::string, std::string>& params) const {
+bool Script::invoke(const std::map<std::string, std::string>& params) const {
     Py_Initialize();
     PyObject* sysPath = PySys_GetObject((char*)"path");
     PyObject* programName = PyString_FromString((_dir).c_str());
     PyList_Append(sysPath, programName);
     Py_DECREF(programName);
     std::string cmd = "from " + _name + ".main import main; main()";
-    PyRun_SimpleString(cmd.c_str());
+    int res = PyRun_SimpleString(cmd.c_str());
     Py_Finalize();
-    return "done";
+    return !res;
 }
 
