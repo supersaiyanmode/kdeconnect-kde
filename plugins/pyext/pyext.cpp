@@ -94,6 +94,7 @@ QVariantList PyExtPlugin::getScripts() const {
     for (auto const& iter :scripts) {
         QVariantMap map;
         map["name"] = QString::fromUtf8(iter.second.name().c_str());
+        map["description"] = QString::fromUtf8(iter.second.description().c_str());
         map["guid"] = QString::fromUtf8(iter.first.c_str());
         list.append(map);
     }
@@ -104,7 +105,11 @@ std::map<std::string, Script > PyExtPlugin::listScripts(const QDir& dir) {
     qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Searching for plugins in: " << dir;
     std::map<std::string, Script> result;
     for (auto const& dirName: listDir(dir)) {
-        result.insert(std::map<std::string, Script>::value_type {dirName, Script(dir.absoluteFilePath(".").toStdString(), dirName)}); 
+        Script s(dir.absoluteFilePath(".").toStdString(), dirName);
+        if (!s.valid()) {
+            continue;
+        }
+        result.insert(std::map<std::string, Script>::value_type {dirName, s}); 
         qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Found PyExt plugin name: " << QString(dirName.c_str());
     }
     return result;
