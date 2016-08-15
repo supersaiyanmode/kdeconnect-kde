@@ -27,6 +27,7 @@
 #include <QDebug>
 #include <QDBusConnection>
 #include <QLoggingCategory>
+#include <QDirIterator>
 
 #include <core/device.h>
 
@@ -34,14 +35,33 @@ K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_pyext.json", re
 
 Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_PYEXT, "kdeconnect.plugin.pyext")
 
-PyExtPlugin::PyExtPlugin(QObject* parent, const QVariantList& args)
-    : KdeConnectPlugin(parent, args) {
-    scripts.insert(std::map<std::string, Script>::value_type ("123", Script("/home/thrustmaster/test.py"))); 
+namespace {
+    QDir getPluginDir() {
+        QDir home = QDir::home();
+        QString path = home.filePath(".kde/share/apps/kdeconnect/pyext/plugins");
+        QDir dir(path);
+        dir.mkpath(".");
+        return dir;
+    }
+    
+    std::vector<std::string> listDir(const QDir& path) {
+        std::vector<std::string> paths;
+        QDirIterator it(path.absolutePath(), QDir::AllDirs | QDir::NoDotAndDotDot, QDirIterator::NoIteratorFlags);
+        while (it.hasNext()) {
+            it.next();
+            paths.push_back(it.fileName().toStdString());
+        }
+        return paths;
+    }
 }
 
-PyExtPlugin::~PyExtPlugin()
-{
-//     qCDebug(KDECONNECT_PLUGIN_PING) << "Ping plugin destructor for device" << device()->name();
+PyExtPlugin::PyExtPlugin(QObject* parent, const QVariantList& args)
+    : KdeConnectPlugin(parent, args), pluginDir(getPluginDir()) {
+    scripts = listScripts(pluginDir);
+}
+
+PyExtPlugin::~PyExtPlugin() {
+    
 }
 
 bool PyExtPlugin::receivePackage(const NetworkPackage& np)
@@ -55,7 +75,7 @@ bool PyExtPlugin::receivePackage(const NetworkPackage& np)
         return true;
     } else if (np.get<QString>("pyext_type") == QString("ScriptExecuteRequest")) {
         QString guid = np.get<QString>("script_guid");
-        qCWarning(KDECONNECT_PLUGIN_PYEXT) << "Got NP for script guid: "<<guid;
+        qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Got NP for script guid: "<<guid;
         std::map<std::string, Script>::const_iterator it = scripts.find(guid.toStdString());
         if (it != scripts.end()) {
             it->second.invoke({});
@@ -80,8 +100,18 @@ QVariantList PyExtPlugin::getScripts() const {
     return list;
 }
 
-QString PyExtPlugin::dbusPath() const
-{
+std::map<std::string, Script > PyExtPlugin::listScripts(const QDir& dir) {
+    qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Searching for plugins in: " << dir;
+    std::map<std::string, Script> result;
+    for (auto const& dirName: listDir(dir)) {
+        result.insert(std::map<std::string, Script>::value_type {dirName, Script(dir.absoluteFilePath(".").toStdString(), dirName)}); 
+        qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Found PyExt plugin name: " << QString(dirName.c_str());
+    }
+    return result;
+}
+
+
+QString PyExtPlugin::dbusPath() const {
     return "/modules/kdeconnect/devices/" + device()->id() + "/pyext";
 }
 
