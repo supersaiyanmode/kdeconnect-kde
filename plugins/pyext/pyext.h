@@ -29,8 +29,6 @@
 
 #include "script.h"
 
-//#define PACKAGE_TYPE_PING QLatin1String("kdeconnect.ping")
-
 class Q_DECL_EXPORT PyExtPlugin
     : public KdeConnectPlugin
 {
