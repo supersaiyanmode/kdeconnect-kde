@@ -6,9 +6,11 @@
 
 
 class Script {
-  std::string _path;
+  std::string _dir;
+  std::string _name;
+  
 public:
-  Script(const std::string&);
+  Script(const std::string&, const std::string&);
   ~Script();
   
   std::string name() const;

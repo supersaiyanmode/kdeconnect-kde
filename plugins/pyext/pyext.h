@@ -23,6 +23,7 @@
 
 #include <map>
 #include <QVariantList>
+#include <QDir>
 
 #include <core/kdeconnectplugin.h>
 
@@ -47,8 +48,10 @@ public Q_SLOTS:
 private:
     QVariantList getScripts() const;
     QString dbusPath() const;
+    std::map<std::string, Script> listScripts(const QDir&);
     
     
+    QDir pluginDir;
     std::map<std::string, Script> scripts;
 };
 

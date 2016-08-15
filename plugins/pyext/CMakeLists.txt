@@ -1,4 +1,7 @@
 find_package(KF5 REQUIRED COMPONENTS Notifications)
+find_package( PythonInterp REQUIRED )
+find_package( PythonLibs REQUIRED )
+include_directories ( ${PYTHON_INCLUDE_DIRS} )
 
 set(kdeconnect_pyext_SRCS
     pyext.cpp
@@ -12,4 +15,5 @@ target_link_libraries(kdeconnect_pyext
     Qt5::DBus
     KF5::I18n
     KF5::Notifications
+    ${PYTHON_LIBRARIES}
 )
