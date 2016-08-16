@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 
 class Script {
@@ -12,6 +13,9 @@ class Script {
   std::string _description;
   std::string _guid;
   bool _valid;
+  
+  std::map<std::string, std::string> entry_points;
+  std::vector<std::string> _capabilities;
   
   bool parseMetadata(const std::string&, const std::string&);
 public:
@@ -23,7 +27,9 @@ public:
   std::string guid() const;
   std::string description() const;
   
-  bool invoke(const std::map<std::string, std::string>& params) const;
+  const std::vector<std::string>& capabilities() const;
+  
+  bool invoke(const std::string& name, const std::map<std::string, std::string>& params) const;
 };
 
 #endif
