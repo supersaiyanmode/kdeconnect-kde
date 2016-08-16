@@ -75,11 +75,15 @@ bool PyExtPlugin::receivePackage(const NetworkPackage& np)
         return true;
     } else if (np.get<QString>("pyext_type") == QString("ScriptExecuteRequest")) {
         QString guid = np.get<QString>("script_guid");
-        qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Got NP for script guid: "<<guid;
+        QString entryPoint = np.get<QString>("script_entrypoint");
+        qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Got package for script guid: "<<guid;
         std::map<std::string, Script>::const_iterator it = scripts.find(guid.toStdString());
-        if (it != scripts.end()) {
-            it->second.invoke({});
+        if (it == scripts.end()) {
+            qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Unable to find script for guid: "<<guid;
+            return false;
         }
+        it->second.invoke(entryPoint.toStdString(), {});
+        return true;
     }
     return false;
 }
@@ -96,6 +100,11 @@ QVariantList PyExtPlugin::getScripts() const {
         map["name"] = QString::fromUtf8(iter.second.name().c_str());
         map["description"] = QString::fromUtf8(iter.second.description().c_str());
         map["guid"] = QString::fromUtf8(iter.first.c_str());
+        QVariantList capabilities;
+        for (auto const& capability: iter.second.capabilities()) {
+            capabilities.append(QString::fromStdString(capability));
+        }
+        map["capabilities"] = capabilities;
         list.append(map);
     }
     return list;
