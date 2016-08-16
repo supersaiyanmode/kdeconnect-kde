@@ -1,4 +1,6 @@
+This plugin embeds a Python interpreter, and allows for writing python scripts that extend the functionality.
+These scripts can respond to android system events (such as phone unlock) or be manually invoked via the Android App.
 
-This plugin displays a notification to the user each time a package with type
-"kdeconnect.ping" is received. If the package has something in the "message"
-field, that will be displayed in the notification body.
+Currently, it supports just two events: 1) Manual invocation 2) Phone Unlock.
+
+Sample scripts here: https://github.com/supersaiyanmode/KDEConnect-PyExtScripts
