@@ -11,6 +11,7 @@
 #include <QDir>
 
 #include "script.h"
+#include "module.h"
 
 Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_PYEXT_SCRIPT, "kdeconnect.plugin.pyext.script")
 
@@ -67,6 +68,8 @@ bool Script::invoke(const std::string& name, const std::map<std::string, std::st
     }
     
     Py_Initialize();
+    Py_InitModule("pyext", module_exports);
+
     PyObject* sysPath = PySys_GetObject((char*)"path");
     PyObject* programName = PyString_FromString((_basedir).c_str());
     PyList_Append(sysPath, programName);
