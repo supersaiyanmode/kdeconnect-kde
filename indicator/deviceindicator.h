@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Albert Vaca <albertvaka@gmail.com>
+ * Copyright 2016 Aleix Pol Gonzalez <aleixpol@kde.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,25 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AUTOCLOSINGQFILE_H
-#define AUTOCLOSINGQFILE_H
+#ifndef DEVICEINDICATOR_H
+#define DEVICEINDICATOR_H
 
-#include <QFile>
+#include <QMenu>
+#include "interfaces/dbusinterfaces.h"
 
-class AutoClosingQFile : public QFile
+class DeviceIndicator : public QMenu
 {
     Q_OBJECT
-public:
+    public:
+        DeviceIndicator(DeviceDbusInterface* device);
 
-    explicit AutoClosingQFile(const QString &name);
-    qint64 readData(char* data, qint64 maxlen) override {
-        qint64 read = QFile::readData(data, maxlen);
-        if (read == -1 || read == bytesAvailable()) {
-            close();
-        }
-        return read;
-    }
+    public Q_SLOTS:
+        void setText(const QString &text) { setTitle(text); }
+
+    private:
+        DeviceDbusInterface* m_device;
 };
 
-
-#endif // AUTOCLOSINGQFILE_H
+#endif // DEVICEINDICATOR_H

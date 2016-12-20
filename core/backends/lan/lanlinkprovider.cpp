@@ -50,12 +50,12 @@ LanLinkProvider::LanLinkProvider(bool testMode)
 
     combineBroadcastsTimer.setInterval(0); // increase this if waiting a single event-loop iteration is not enough
     combineBroadcastsTimer.setSingleShot(true);
-    connect(&combineBroadcastsTimer, SIGNAL(timeout()), this, SLOT(broadcastToNetwork()));
+    connect(&combineBroadcastsTimer, &QTimer::timeout, this, &LanLinkProvider::broadcastToNetwork);
 
-    connect(&mUdpSocket, SIGNAL(readyRead()), this, SLOT(newUdpConnection()));
+    connect(&mUdpSocket, &QIODevice::readyRead, this, &LanLinkProvider::newUdpConnection);
 
     mServer = new Server(this);
-    connect(mServer,SIGNAL(newConnection()),this, SLOT(newConnection()));
+    connect(mServer,&QTcpServer::newConnection,this, &LanLinkProvider::newConnection);
 
     //Detect when a network interface changes status, so we announce ourelves in the new network
     QNetworkConfigurationManager* networkManager = new QNetworkConfigurationManager(this);
@@ -125,10 +125,35 @@ void LanLinkProvider::broadcastToNetwork()
     Q_ASSERT(mTcpPort != 0);
 
     qCDebug(KDECONNECT_CORE()) << "Broadcasting identity packet";
-    NetworkPackage np("");
+
+    QHostAddress destAddress = mTestMode? QHostAddress::LocalHost : QHostAddress(QStringLiteral("255.255.255.255"));
+
+    NetworkPackage np(QLatin1String(""));
     NetworkPackage::createIdentityPackage(&np);
-    np.set("tcpPort", mTcpPort);
-    mUdpSocket.writeDatagram(np.serialize(), mTestMode ? QHostAddress::LocalHost : QHostAddress("255.255.255.255"), PORT);
+    np.set(QStringLiteral("tcpPort"), mTcpPort);
+
+#ifdef Q_OS_WIN
+    //On Windows we need to broadcast from every local IP address to reach all networks
+    QUdpSocket sendSocket;
+    for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
+        if ( (iface.flags() & QNetworkInterface::IsUp)
+          && (iface.flags() & QNetworkInterface::IsRunning)
+          && (iface.flags() & QNetworkInterface::CanBroadcast)) {
+            for (const QNetworkAddressEntry &ifaceAddress : iface.addressEntries()) {
+                QHostAddress sourceAddress = ifaceAddress.ip();
+                if (sourceAddress.protocol() == QAbstractSocket::IPv4Protocol && sourceAddress != QHostAddress::LocalHost) {
+                    qCDebug(KDECONNECT_CORE()) << "Broadcasting as" << sourceAddress;
+                    sendSocket.bind(sourceAddress, PORT);
+                    sendSocket.writeDatagram(np.serialize(), destAddress, PORT);
+                    sendSocket.close();
+                }
+            }
+        }
+    }
+#else
+    mUdpSocket.writeDatagram(np.serialize(), destAddress, PORT);
+#endif
+
 }
 
 //I'm the existing device, a new device is kindly introducing itself.
@@ -146,7 +171,7 @@ void LanLinkProvider::newUdpConnection() //udpBroadcastReceived
         if (sender.isLoopback() && !mTestMode)
             continue;
 
-        NetworkPackage* receivedPackage = new NetworkPackage("");
+        NetworkPackage* receivedPackage = new NetworkPackage(QLatin1String(""));
         bool success = NetworkPackage::unserialize(datagram, receivedPackage);
 
         //qCDebug(KDECONNECT_CORE) << "udp connection from " << receivedPackage->;
@@ -158,20 +183,20 @@ void LanLinkProvider::newUdpConnection() //udpBroadcastReceived
             continue;
         }
 
-        if (receivedPackage->get<QString>("deviceId") == KdeConnectConfig::instance()->deviceId()) {
+        if (receivedPackage->get<QString>(QStringLiteral("deviceId")) == KdeConnectConfig::instance()->deviceId()) {
             //qCDebug(KDECONNECT_CORE) << "Ignoring my own broadcast";
             delete receivedPackage;
             continue;
         }
 
-        int tcpPort = receivedPackage->get<int>("tcpPort", PORT);
+        int tcpPort = receivedPackage->get<int>(QStringLiteral("tcpPort"), PORT);
 
         //qCDebug(KDECONNECT_CORE) << "Received Udp identity package from" << sender << " asking for a tcp connection on port " << tcpPort;
 
         QSslSocket* socket = new QSslSocket(this);
         receivedIdentityPackages[socket].np = receivedPackage;
         receivedIdentityPackages[socket].sender = sender;
-        connect(socket, SIGNAL(connected()), this, SLOT(connected()));
+        connect(socket, &QAbstractSocket::connected, this, &LanLinkProvider::connected);
         connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError()));
         socket->connectToHost(sender, tcpPort);
     }
@@ -181,13 +206,13 @@ void LanLinkProvider::connectError()
 {
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     if (!socket) return;
-    disconnect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    disconnect(socket, &QAbstractSocket::connected, this, &LanLinkProvider::connected);
     disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError()));
 
     qCDebug(KDECONNECT_CORE) << "Fallback (1), try reverse connection (send udp packet)" << socket->errorString();
-    NetworkPackage np("");
+    NetworkPackage np(QLatin1String(""));
     NetworkPackage::createIdentityPackage(&np);
-    np.set("tcpPort", mTcpPort);
+    np.set(QStringLiteral("tcpPort"), mTcpPort);
     mUdpSocket.writeDatagram(np.serialize(), receivedIdentityPackages[socket].sender, PORT);
 
     //The socket we created didn't work, and we didn't manage
@@ -203,20 +228,20 @@ void LanLinkProvider::connected()
 
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     if (!socket) return;
-    disconnect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    disconnect(socket, &QAbstractSocket::connected, this, &LanLinkProvider::connected);
     disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError()));
 
     configureSocket(socket);
 
     // If socket disconnects due to any reason after connection, link on ssl faliure
-    connect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
+    connect(socket, &QAbstractSocket::disconnected, socket, &QObject::deleteLater);
 
     NetworkPackage* receivedPackage = receivedIdentityPackages[socket].np;
-    const QString& deviceId = receivedPackage->get<QString>("deviceId");
+    const QString& deviceId = receivedPackage->get<QString>(QStringLiteral("deviceId"));
     //qCDebug(KDECONNECT_CORE) << "Connected" << socket->isWritable();
 
     // If network is on ssl, do not believe when they are connected, believe when handshake is completed
-    NetworkPackage np2("");
+    NetworkPackage np2(QLatin1String(""));
     NetworkPackage::createIdentityPackage(&np2);
     socket->write(np2.serialize());
     bool success = socket->waitForBytesWritten();
@@ -226,14 +251,14 @@ void LanLinkProvider::connected()
         qCDebug(KDECONNECT_CORE) << "TCP connection done (i'm the existing device)";
 
         // if ssl supported
-        if (receivedPackage->get<int>("protocolVersion") >= MIN_VERSION_WITH_SSL_SUPPORT) {
+        if (receivedPackage->get<int>(QStringLiteral("protocolVersion")) >= MIN_VERSION_WITH_SSL_SUPPORT) {
 
             bool isDeviceTrusted = KdeConnectConfig::instance()->trustedDevices().contains(deviceId);
             configureSslSocket(socket, deviceId, isDeviceTrusted);
 
             qCDebug(KDECONNECT_CORE) << "Starting server ssl (I'm the client TCP socket)";
 
-            connect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+            connect(socket, &QSslSocket::encrypted, this, &LanLinkProvider::encrypted);
 
             if (isDeviceTrusted) {
                 connect(socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
@@ -243,7 +268,7 @@ void LanLinkProvider::connected()
 
             return; // Return statement prevents from deleting received package, needed in slot "encrypted"
         } else {
-            qWarning() << receivedPackage->get<QString>("deviceName") << "uses an old protocol version, this won't work";
+            qWarning() << receivedPackage->get<QString>(QStringLiteral("deviceName")) << "uses an old protocol version, this won't work";
             //addLink(deviceId, socket, receivedPackage, LanDeviceLink::Remotely);
         }
 
@@ -264,14 +289,14 @@ void LanLinkProvider::encrypted()
 
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     if (!socket) return;
-    disconnect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+    disconnect(socket, &QSslSocket::encrypted, this, &LanLinkProvider::encrypted);
     disconnect(socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
 
     Q_ASSERT(socket->mode() != QSslSocket::UnencryptedMode);
     LanDeviceLink::ConnectionStarted connectionOrigin = (socket->mode() == QSslSocket::SslClientMode)? LanDeviceLink::Locally : LanDeviceLink::Remotely;
 
     NetworkPackage* receivedPackage = receivedIdentityPackages[socket].np;
-    const QString& deviceId = receivedPackage->get<QString>("deviceId");
+    const QString& deviceId = receivedPackage->get<QString>(QStringLiteral("deviceId"));
 
     addLink(deviceId, socket, receivedPackage, connectionOrigin);
 
@@ -284,7 +309,7 @@ void LanLinkProvider::sslErrors(const QList<QSslError>& errors)
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     if (!socket) return;
 
-    disconnect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+    disconnect(socket, &QSslSocket::encrypted, this, &LanLinkProvider::encrypted);
     disconnect(socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
 
     Q_FOREACH (const QSslError &error, errors) {
@@ -322,10 +347,10 @@ void LanLinkProvider::newConnection()
         //This socket is still managed by us (and child of the QTcpServer), if
         //it disconnects before we manage to pass it to a LanDeviceLink, it's
         //our responsibility to delete it. We do so with this connection.
-        connect(socket, SIGNAL(disconnected()),
-                socket, SLOT(deleteLater()));
-        connect(socket, SIGNAL(readyRead()),
-                this, SLOT(dataReceived()));
+        connect(socket, &QAbstractSocket::disconnected,
+                socket, &QObject::deleteLater);
+        connect(socket, &QIODevice::readyRead,
+                this, &LanLinkProvider::dataReceived);
 
     }
 }
@@ -339,7 +364,7 @@ void LanLinkProvider::dataReceived()
 
     //qCDebug(KDECONNECT_CORE) << "LanLinkProvider received reply:" << data;
 
-    NetworkPackage* np = new NetworkPackage("");
+    NetworkPackage* np = new NetworkPackage(QLatin1String(""));
     bool success = NetworkPackage::unserialize(data, np);
 
     if (!success) {
@@ -356,20 +381,20 @@ void LanLinkProvider::dataReceived()
     // Needed in "encrypted" if ssl is used, similar to "connected"
     receivedIdentityPackages[socket].np = np;
 
-    const QString& deviceId = np->get<QString>("deviceId");
+    const QString& deviceId = np->get<QString>(QStringLiteral("deviceId"));
     //qCDebug(KDECONNECT_CORE) << "Handshaking done (i'm the new device)";
 
     //This socket will now be owned by the LanDeviceLink or we don't want more data to be received, forget about it
-    disconnect(socket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+    disconnect(socket, &QIODevice::readyRead, this, &LanLinkProvider::dataReceived);
 
-    if (np->get<int>("protocolVersion") >= MIN_VERSION_WITH_SSL_SUPPORT) {
+    if (np->get<int>(QStringLiteral("protocolVersion")) >= MIN_VERSION_WITH_SSL_SUPPORT) {
 
         bool isDeviceTrusted = KdeConnectConfig::instance()->trustedDevices().contains(deviceId);
         configureSslSocket(socket, deviceId, isDeviceTrusted);
 
         qCDebug(KDECONNECT_CORE) << "Starting client ssl (but I'm the server TCP socket)";
 
-        connect(socket, SIGNAL(encrypted()), this, SLOT(encrypted()));
+        connect(socket, &QSslSocket::encrypted, this, &LanLinkProvider::encrypted);
 
         if (isDeviceTrusted) {
             connect(socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
@@ -378,7 +403,7 @@ void LanLinkProvider::dataReceived()
         socket->startClientEncryption();
 
     } else {
-        qWarning() << np->get<QString>("deviceName") << "uses an old protocol version, this won't work";
+        qWarning() << np->get<QString>(QStringLiteral("deviceName")) << "uses an old protocol version, this won't work";
         //addLink(deviceId, socket, np, LanDeviceLink::Locally);
         delete receivedIdentityPackages.take(socket).np;
     }
@@ -404,11 +429,11 @@ void LanLinkProvider::configureSslSocket(QSslSocket* socket, const QString& devi
     // Top 3 ciphers are for new Android devices, botton two are for old Android devices
     // FIXME : These cipher suites should be checked whether they are supported or not on device
     QList<QSslCipher> socketCiphers;
-    socketCiphers.append(QSslCipher("ECDHE-ECDSA-AES256-GCM-SHA384"));
-    socketCiphers.append(QSslCipher("ECDHE-ECDSA-AES128-GCM-SHA256"));
-    socketCiphers.append(QSslCipher("ECDHE-RSA-AES128-SHA"));
-    socketCiphers.append(QSslCipher("RC4-SHA"));
-    socketCiphers.append(QSslCipher("RC4-MD5"));
+    socketCiphers.append(QSslCipher(QStringLiteral("ECDHE-ECDSA-AES256-GCM-SHA384")));
+    socketCiphers.append(QSslCipher(QStringLiteral("ECDHE-ECDSA-AES128-GCM-SHA256")));
+    socketCiphers.append(QSslCipher(QStringLiteral("ECDHE-RSA-AES128-SHA")));
+    socketCiphers.append(QSslCipher(QStringLiteral("RC4-SHA")));
+    socketCiphers.append(QSslCipher(QStringLiteral("RC4-MD5")));
 
     // Configure for ssl
     QSslConfiguration sslConfig;
@@ -421,7 +446,7 @@ void LanLinkProvider::configureSslSocket(QSslSocket* socket, const QString& devi
     socket->setPeerVerifyName(deviceId);
 
     if (isDeviceTrusted) {
-        QString certString = KdeConnectConfig::instance()->getDeviceProperty(deviceId, "certificate", QString());
+        QString certString = KdeConnectConfig::instance()->getDeviceProperty(deviceId, QStringLiteral("certificate"), QString());
         socket->addCaCertificate(QSslCertificate(certString.toLatin1()));
         socket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     } else {
@@ -464,7 +489,7 @@ void LanLinkProvider::configureSocket(QSslSocket* socket) {
 void LanLinkProvider::addLink(const QString& deviceId, QSslSocket* socket, NetworkPackage* receivedPackage, LanDeviceLink::ConnectionStarted connectionOrigin)
 {
     // Socket disconnection will now be handled by LanDeviceLink
-    disconnect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
+    disconnect(socket, &QAbstractSocket::disconnected, socket, &QObject::deleteLater);
 
     LanDeviceLink* deviceLink;
     //Do we have a link for this device already?
@@ -475,7 +500,7 @@ void LanLinkProvider::addLink(const QString& deviceId, QSslSocket* socket, Netwo
         deviceLink->reset(socket, connectionOrigin);
     } else {
         deviceLink = new LanDeviceLink(deviceId, this, socket, connectionOrigin);
-        connect(deviceLink, SIGNAL(destroyed(QObject*)), this, SLOT(deviceLinkDestroyed(QObject*)));
+        connect(deviceLink, &QObject::destroyed, this, &LanLinkProvider::deviceLinkDestroyed);
         mLinks[deviceId] = deviceLink;
         if (mPairingHandlers.contains(deviceId)) {
             //We shouldn't have a pairinghandler if we didn't have a link.
