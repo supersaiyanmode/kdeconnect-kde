@@ -9,6 +9,7 @@
             }
         ], 
         "Description": "Show notifications for calls and SMS", 
+        "Description[ar]": "أظهر إخطارات المكالمات والرّسائل", 
         "Description[ca@valencia]": "Mostra les notificacions de les trucades i els SMS", 
         "Description[ca]": "Mostra les notificacions de les trucades i els SMS", 
         "Description[cs]": "Zobrazit upozornění pro telefonáty a SMS", 
@@ -19,6 +20,7 @@
         "Description[et]": "Kõnede ja SMS-ide märguannete näitamine", 
         "Description[fi]": "Näytä puhelujen ja tekstiviestien ilmoitukset", 
         "Description[it]": "Mostra notifiche per le chiamate e per gli SMS", 
+        "Description[ko]": "통화와 SMS 알림 표시", 
         "Description[nl]": "Meldingen tonen van oproepen en SMSjes", 
         "Description[nn]": "Vis varslingar for oppringingar og SMS", 
         "Description[pl]": "Powiadamiaj o dzwonieniu i esemesach", 
@@ -26,6 +28,7 @@
         "Description[sv]": "Visa underrättelser om samtal och SMS", 
         "Description[uk]": "Показ сповіщень щодо дзвінків і SMS", 
         "Description[x-test]": "xxShow notifications for calls and SMSxx", 
+        "Description[zh_CN]": "显示来电和短信通知", 
         "Description[zh_TW]": "顯示來電與短訊通知", 
         "EnabledByDefault": true, 
         "Icon": "call-start", 

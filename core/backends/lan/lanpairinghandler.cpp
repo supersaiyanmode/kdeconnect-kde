@@ -38,8 +38,6 @@ LanPairingHandler::LanPairingHandler(DeviceLink* deviceLink)
 
 void LanPairingHandler::packageReceived(const NetworkPackage& np)
 {
-    m_pairingTimeout.stop();
-
     bool wantsPair = np.get<bool>(QStringLiteral("pair"));
 
     if (wantsPair) {
@@ -57,7 +55,6 @@ void LanPairingHandler::packageReceived(const NetworkPackage& np)
                 return;
             }
 
-            Daemon::instance()->askPairingConfirmation(this);
             setInternalPairStatus(RequestedByPeer);
         }
 
@@ -65,10 +62,10 @@ void LanPairingHandler::packageReceived(const NetworkPackage& np)
 
         qCDebug(KDECONNECT_CORE) << "Unpair request";
 
-        setInternalPairStatus(NotPaired);
          if (isPairRequested()) {
             Q_EMIT pairingError(i18n("Canceled by other peer"));
         }
+        setInternalPairStatus(NotPaired);
     }
 }
 
@@ -77,9 +74,6 @@ bool LanPairingHandler::requestPairing()
     switch (m_status) {
         case Paired:
             Q_EMIT pairingError(i18n("%1: Already paired", deviceLink()->name()));
-            return false;
-        case Requested:
-            Q_EMIT pairingError(i18n("%1: Pairing already requested for this device", deviceLink()->name()));
             return false;
         case RequestedByPeer:
             qCDebug(KDECONNECT_CORE) << deviceLink()->name() << " : Pairing already started by the other end, accepting their request.";
@@ -93,14 +87,12 @@ bool LanPairingHandler::requestPairing()
     const bool success = deviceLink()->sendPackage(np);
     if (success) {
         setInternalPairStatus(Requested);
-        m_pairingTimeout.start();
     }
     return success;
 }
 
 bool LanPairingHandler::acceptPairing()
 {
-    m_pairingTimeout.stop(); // Just in case it is started
     NetworkPackage np(PACKAGE_TYPE_PAIR, {{"pair", true}});
     bool success = deviceLink()->sendPackage(np);
     if (success) {
@@ -132,6 +124,18 @@ void LanPairingHandler::pairingTimeout()
 
 void LanPairingHandler::setInternalPairStatus(LanPairingHandler::InternalPairStatus status)
 {
+    if (status == Requested || status == RequestedByPeer) {
+        m_pairingTimeout.start();
+    } else {
+        m_pairingTimeout.stop();
+    }
+
+    if (m_status == RequestedByPeer && (status == NotPaired || status == Paired)) {
+        Q_EMIT deviceLink()->pairingRequestExpired(this);
+    } else if (status == RequestedByPeer) {
+        Q_EMIT deviceLink()->pairingRequest(this);
+    }
+
     m_status = status;
     if (status == Paired) {
         deviceLink()->setPairStatus(DeviceLink::Paired);

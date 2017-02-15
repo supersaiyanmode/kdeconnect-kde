@@ -32,7 +32,7 @@ QString DaemonDbusInterface::activatedService() {
 DaemonDbusInterface::DaemonDbusInterface(QObject* parent)
     : OrgKdeKdeconnectDaemonInterface(DaemonDbusInterface::activatedService(), QStringLiteral("/modules/kdeconnect"), QDBusConnection::sessionBus(), parent)
 {
-
+    connect(this, &OrgKdeKdeconnectDaemonInterface::pairingRequestsChanged, this, &DaemonDbusInterface::pairingRequestsChangedProxy);
 }
 
 DaemonDbusInterface::~DaemonDbusInterface()
@@ -47,6 +47,7 @@ DeviceDbusInterface::DeviceDbusInterface(const QString& id, QObject* parent)
     connect(this, &OrgKdeKdeconnectDeviceInterface::trustedChanged, this, &DeviceDbusInterface::trustedChangedProxy);
     connect(this, &OrgKdeKdeconnectDeviceInterface::reachableChanged, this, &DeviceDbusInterface::reachableChangedProxy);
     connect(this, &OrgKdeKdeconnectDeviceInterface::nameChanged, this, &DeviceDbusInterface::nameChangedProxy);
+    connect(this, &OrgKdeKdeconnectDeviceInterface::hasPairingRequestsChanged, this, &DeviceDbusInterface::hasPairingRequestsChangedProxy);
 }
 
 DeviceDbusInterface::~DeviceDbusInterface()
@@ -155,5 +156,13 @@ RemoteCommandsDbusInterface::RemoteCommandsDbusInterface(const QString& deviceId
 }
 
 RemoteCommandsDbusInterface::~RemoteCommandsDbusInterface() = default;
+
+RemoteKeyboardDbusInterface::RemoteKeyboardDbusInterface(const QString& deviceId, QObject* parent):
+    OrgKdeKdeconnectDeviceRemotekeyboardInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/" + deviceId + "/remotekeyboard", QDBusConnection::sessionBus(), parent)
+{
+    connect(this, &OrgKdeKdeconnectDeviceRemotekeyboardInterface::remoteStateChanged, this, &RemoteKeyboardDbusInterface::remoteStateChanged);
+}
+
+RemoteKeyboardDbusInterface::~RemoteKeyboardDbusInterface() = default;
 
 #include "dbusinterfaces.moc"

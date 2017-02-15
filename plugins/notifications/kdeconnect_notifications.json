@@ -21,6 +21,7 @@
         "Description[fi]": "Näytä laitteen ilmoitukset tällä tietokoneella ja pidä ne ajan tasalla", 
         "Description[gl]": "Mostrar as notificacións do dispositivo neste computador e mantelas sincronizadas.", 
         "Description[it]": "Mostra le notifiche del telefono sul tuo computer e tienile sincronizzate", 
+        "Description[ko]": "휴대폰 알림을 컴퓨터에 표시하고 동기화하기", 
         "Description[nl]": "Apparaatmeldingen op deze computer tonen en ze gesynchroniseerd houden", 
         "Description[nn]": "Vis telefonvarslingar på datamaskina og hald dei synkronisert", 
         "Description[pl]": "Pokaż powiadomienia urządzenia na swoim komputerze i synchronizuj je", 
@@ -30,6 +31,7 @@
         "Description[sv]": "Visa enhetens underrättelser på datorn och håll dem synkroniserade", 
         "Description[uk]": "Показ сповіщень з пристрою на цьому комп’ютері та підтримання синхронізації даних сповіщень", 
         "Description[x-test]": "xxShow device's notifications on this computer and keep them in syncxx", 
+        "Description[zh_CN]": "在电脑显示手机通知并保持同步", 
         "Description[zh_TW]": "在電腦上顯示裝置通知並且保持同步", 
         "EnabledByDefault": true, 
         "Icon": "preferences-desktop-notification", 
@@ -48,6 +50,7 @@
         "Name[fi]": "Vastaanota ilmoituksia", 
         "Name[gl]": "Recibir notificacións", 
         "Name[it]": "Ricevi notifiche", 
+        "Name[ko]": "알림 받기", 
         "Name[nl]": "Meldingen ontvangen", 
         "Name[nn]": "Få varslingar", 
         "Name[pl]": "Otrzymuj powiadomienia", 
@@ -57,6 +60,7 @@
         "Name[sv]": "Ta emot underrättelser", 
         "Name[uk]": "Отримати сповіщення", 
         "Name[x-test]": "xxReceive notificationsxx", 
+        "Name[zh_CN]": "接收通知", 
         "Name[zh_TW]": "收到通知", 
         "ServiceTypes": [
             "KdeConnect/Plugin"

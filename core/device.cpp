@@ -140,7 +140,7 @@ void Device::reloadPlugins()
 
         const QString dbusPath = plugin->dbusPath();
         if (!dbusPath.isEmpty()) {
-            bus.registerObject(dbusPath, plugin, QDBusConnection::ExportAllProperties | QDBusConnection::ExportScriptableInvokables | QDBusConnection::ExportScriptableSignals);
+            bus.registerObject(dbusPath, plugin, QDBusConnection::ExportAllProperties | QDBusConnection::ExportScriptableInvokables | QDBusConnection::ExportScriptableSignals | QDBusConnection::ExportScriptableSlots);
         }
     }
     if (differentPlugins) {
@@ -251,7 +251,49 @@ void Device::addLink(const NetworkPackage& identityPackage, DeviceLink* link)
     }
 
     connect(link, &DeviceLink::pairStatusChanged, this, &Device::pairStatusChanged);
+    connect(link, &DeviceLink::pairingRequest, this, &Device::addPairingRequest);
+    connect(link, &DeviceLink::pairingRequestExpired, this, &Device::removePairingRequest);
     connect(link, &DeviceLink::pairingError, this, &Device::pairingError);
+}
+
+void Device::addPairingRequest(PairingHandler* handler)
+{
+    const bool wasEmpty = m_pairRequests.isEmpty();
+    m_pairRequests.insert(handler);
+
+    if (wasEmpty != m_pairRequests.isEmpty())
+        Q_EMIT hasPairingRequestsChanged(!m_pairRequests.isEmpty());
+}
+
+void Device::removePairingRequest(PairingHandler* handler)
+{
+    const bool wasEmpty = m_pairRequests.isEmpty();
+    m_pairRequests.remove(handler);
+
+    if (wasEmpty != m_pairRequests.isEmpty())
+        Q_EMIT hasPairingRequestsChanged(!m_pairRequests.isEmpty());
+}
+
+void Device::acceptPairing()
+{
+    if (m_pairRequests.isEmpty())
+        qWarning() << "no pair requests to accept!";
+
+    //copying because the pairing handler will be removed upon accept
+    const auto prCopy = m_pairRequests;
+    for (auto ph: prCopy)
+        ph->acceptPairing();
+}
+
+void Device::rejectPairing()
+{
+    if (m_pairRequests.isEmpty())
+        qWarning() << "no pair requests to reject!";
+
+    //copying because the pairing handler will be removed upon reject
+    const auto prCopy = m_pairRequests;
+    for (auto ph: prCopy)
+        ph->rejectPairing();
 }
 
 void Device::linkDestroyed(QObject* o)

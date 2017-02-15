@@ -34,6 +34,7 @@
 #include "interfaces/remotecontrolinterface.h"
 #include "interfaces/lockdeviceinterface.h"
 #include "interfaces/remotecommandsinterface.h"
+#include "interfaces/remotekeyboardinterface.h"
 
 /**
  * Using these "proxy" classes just in case we need to rename the
@@ -51,6 +52,7 @@ public:
 
 Q_SIGNALS:
     void deviceAdded(const QString &id);
+    void pairingRequestsChangedProxy();
 };
 
 class KDECONNECTINTERFACES_EXPORT DeviceDbusInterface
@@ -62,6 +64,7 @@ class KDECONNECTINTERFACES_EXPORT DeviceDbusInterface
     Q_PROPERTY(bool isReachable READ isReachable NOTIFY reachableChangedProxy)
     Q_PROPERTY(bool isTrusted READ isTrusted NOTIFY trustedChangedProxy)
     Q_PROPERTY(QString name READ name NOTIFY nameChangedProxy)
+    Q_PROPERTY(bool hasPairingRequests READ hasPairingRequests NOTIFY hasPairingRequestsChangedProxy)
 
 public:
     explicit DeviceDbusInterface(const QString& deviceId, QObject* parent = nullptr);
@@ -74,6 +77,7 @@ Q_SIGNALS:
     void nameChangedProxy(const QString &name);
     void trustedChangedProxy(bool paired);
     void reachableChangedProxy(bool reachable);
+    void hasPairingRequestsChangedProxy();
 
 private:
     const QString m_id;
@@ -178,6 +182,18 @@ class KDECONNECTINTERFACES_EXPORT RemoteCommandsDbusInterface
 public:
     explicit RemoteCommandsDbusInterface(const QString& deviceId, QObject* parent = nullptr);
     ~RemoteCommandsDbusInterface() override;
+};
+
+class KDECONNECTINTERFACES_EXPORT RemoteKeyboardDbusInterface
+    : public OrgKdeKdeconnectDeviceRemotekeyboardInterface
+{
+    Q_OBJECT
+    Q_PROPERTY(bool remoteState READ remoteState NOTIFY remoteStateChanged)
+public:
+    explicit RemoteKeyboardDbusInterface(const QString& deviceId, QObject* parent = nullptr);
+    ~RemoteKeyboardDbusInterface() override;
+Q_SIGNALS:
+    void remoteStateChanged(bool state);
 };
 
 template <typename T, typename W>
