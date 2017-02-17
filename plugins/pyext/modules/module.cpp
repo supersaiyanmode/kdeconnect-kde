@@ -4,7 +4,7 @@
 namespace {
     PyObject* createSimpleNotification(PyObject* self, PyObject* text) {
         PyObject* strObj = PyObject_Str(text);
-        const char* s = PyString_AsString(strObj);
+        const char* s = PyUnicode_AS_DATA(strObj);
         
         KNotification* notification = new KNotification("notification", KNotification::CloseOnTimeout);
         notification->setIconName(QStringLiteral("preferences-desktop-notification"));
