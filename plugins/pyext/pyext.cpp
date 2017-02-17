@@ -58,10 +58,11 @@ namespace {
 PyExtPlugin::PyExtPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args), pluginDir(getPluginDir()) {
     scripts = listScripts(pluginDir);
+    interpreter.initialize();
+    interpreter.addSysPath(pluginDir.absoluteFilePath(".").toStdString());
 }
 
 PyExtPlugin::~PyExtPlugin() {
-    
 }
 
 bool PyExtPlugin::receivePackage(const NetworkPackage& np)
@@ -77,7 +78,7 @@ bool PyExtPlugin::receivePackage(const NetworkPackage& np)
         QString guid = np.get<QString>("script_guid");
         QString entryPoint = np.get<QString>("script_entrypoint");
         qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Got package for script guid: "<<guid;
-        std::map<std::string, Script>::const_iterator it = scripts.find(guid.toStdString());
+        std::map<std::string, Script>::iterator it = scripts.find(guid.toStdString());
         if (it == scripts.end()) {
             qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Unable to find script for guid: "<<guid;
             return false;
@@ -114,12 +115,15 @@ std::map<std::string, Script > PyExtPlugin::listScripts(const QDir& dir) {
     qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Searching for plugins in: " << dir;
     std::map<std::string, Script> result;
     for (auto const& dirName: listDir(dir)) {
-        Script s(dir.absoluteFilePath(".").toStdString(), dirName);
+        auto path = dir.absoluteFilePath(".").toStdString();
+        Script s(interpreter, path, dirName);
         if (!s.valid()) {
-            continue;
+            qCWarning(KDECONNECT_PLUGIN_PYEXT) << "Failed to load PyExt plugin name: " <<  QString(dirName.c_str());
+        } else {
+            result.insert(
+                    std::map<std::string, Script>::value_type {dirName, s});
+            qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Found PyExt plugin name: " <<  QString(dirName.c_str());
         }
-        result.insert(std::map<std::string, Script>::value_type {dirName, s}); 
-        qCDebug(KDECONNECT_PLUGIN_PYEXT) << "Found PyExt plugin name: " << QString(dirName.c_str());
     }
     return result;
 }

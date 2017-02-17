@@ -1,4 +1,3 @@
-#include <Python.h>
 #include <cstdlib>
 
 #include <QJsonObject>
@@ -11,7 +10,6 @@
 #include <QDir>
 
 #include "script.h"
-#include "module.h"
 
 Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_PYEXT_SCRIPT, "kdeconnect.plugin.pyext.script")
 
@@ -29,17 +27,20 @@ namespace {
     }
 }
 
-Script::Script(const std::string& d, const std::string& p): _basedir(d), _plugindir(p) {
+Script::Script(Interpreter& interpreter, const std::string& d,
+               const std::string& p): _basedir(d), _plugindir(p),
+               interpreter(interpreter) {
     _valid = parseMetadata(_basedir, _plugindir);
+    if (!_valid) {
+        return;
+    }
     _capabilities = extractKeys(entry_points);
 }
 
 Script::~Script() {
-
-}
-
-bool Script::valid() const {
-    return _valid;
+    if (_background) {
+        //terminate interpreter here.
+    }   
 }
 
 std::string Script::name() const {
@@ -58,8 +59,12 @@ const std::vector<std::string>& Script::capabilities() const {
     return _capabilities;
 }
 
+bool Script::valid() const {
+    return _valid;
+}
 
-bool Script::invoke(const std::string& name, const std::map<std::string, std::string>& params) const {
+bool Script::invoke(const std::string& name, 
+                    const std::map<std::string, std::string>& params) {
     std::map<std::string, std::string>::const_iterator it = entry_points.find(name);
     if (it == entry_points.end()) {
         qCDebug(KDECONNECT_PLUGIN_PYEXT_SCRIPT()) << "Unable to find entry point: "<<QString::fromStdString(name)
@@ -67,19 +72,8 @@ bool Script::invoke(const std::string& name, const std::map<std::string, std::st
         return false;
     }
     
-    Py_Initialize();
-    Py_InitModule("pyext", module_exports);
-
-    PyObject* sysPath = PySys_GetObject((char*)"path");
-    PyObject* programName = PyString_FromString((_basedir).c_str());
-    PyList_Append(sysPath, programName);
-    Py_DECREF(programName);
-    
-    std::string func = it->second;
-    std::string cmd = "from " + _plugindir + ".main import " + func + "; " + func + "()";
-    int res = PyRun_SimpleString(cmd.c_str());
-    Py_Finalize();
-    return !res;
+    interpreter.callFunction(_plugindir, it->second, params);
+    return true;
 }
 
 bool Script::parseMetadata(const std::string& basedir, const std::string& plugindir) {
@@ -112,7 +106,15 @@ bool Script::parseMetadata(const std::string& basedir, const std::string& plugin
     } else {
         _description = descVal.toString().toStdString();
     }
-    
+
+    //"persistent" - not mandatory
+    QJsonValue persistentVal = obj.value(QString("persistent"));
+    if (persistentVal.isUndefined() || !persistentVal.isBool()) {
+        qCDebug(KDECONNECT_PLUGIN_PYEXT_SCRIPT) << "JSON does not define a 'persistent' key holding a bool. Defaulting to false.";
+        _background = false;
+    } else {
+        _background = persistentVal.toBool();
+    }
     
     //"entry_points" - mandatory
     QJsonValue entryPointsVal = obj.value(QString("entry_points"));

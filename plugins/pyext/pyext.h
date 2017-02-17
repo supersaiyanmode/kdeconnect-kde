@@ -51,6 +51,7 @@ private:
     
     QDir pluginDir;
     std::map<std::string, Script> scripts;
+    Py3xSimpleInterpreter interpreter;
 };
 
 #endif
