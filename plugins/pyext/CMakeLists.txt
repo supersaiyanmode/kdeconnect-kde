@@ -6,7 +6,7 @@ include_directories ( ${PYTHON_INCLUDE_DIRS} )
 set(kdeconnect_pyext_SRCS
     pyext.cpp
     script.cpp
-    module.cpp
+    modules/module.cpp
 )
 
 kdeconnect_add_plugin(kdeconnect_pyext JSON kdeconnect_pyext.json SOURCES ${kdeconnect_pyext_SRCS})
